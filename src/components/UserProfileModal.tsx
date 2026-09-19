@@ -442,7 +442,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           {/* Profile Anthem Player */}
-          {user.anthem && (
+          {(user.anthem || user.profileSong) && (
             <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/60 to-pink-950/40 border border-pink-500/30 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <button
@@ -461,10 +461,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Music className="w-3 h-3" /> Profile Anthem
                   </span>
                   <h5 className="font-semibold text-xs text-white truncate">
-                    {user.anthem.title}
+                    {(user.anthem || user.profileSong)?.title}
                   </h5>
                   <p className="text-[10px] text-slate-400 truncate">
-                    {user.anthem.artist}
+                    {(user.anthem || user.profileSong)?.artist}
                   </p>
                 </div>
               </div>

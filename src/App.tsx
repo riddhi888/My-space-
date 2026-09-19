@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
-import { TabType, Friend, SocialPost, SocialUser, NotificationItem, SharedLink, Reel } from './types';
+import React, { useState, useEffect } from 'react';
+import {
+  TabType,
+  Friend,
+  SocialPost,
+  SocialUser,
+  NotificationItem,
+  SharedLink,
+  Reel,
+  UserAccount,
+  ConnectedAppAccount,
+  ConnectedPlatform,
+  UserProfile,
+} from './types';
 import {
   currentUser as initialUser,
   onlineFriends as initialFriends,
@@ -12,6 +24,7 @@ import {
   mockSocialUsers,
   mockSharedLinks,
 } from './data/mockData';
+import { AccountService, SEED_ACCOUNTS } from './services/accountService';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { HomeView } from './components/HomeView';
@@ -33,16 +46,33 @@ import { NetworkListModal } from './components/NetworkListModal';
 import { ShareLinkModal } from './components/ShareLinkModal';
 import { NotificationsView } from './components/NotificationsView';
 import { SettingsView } from './components/SettingsView';
+import { ConnectedAppsView } from './components/ConnectedAppsView';
+import { LoginScreen } from './components/LoginScreen';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('home');
-  const [user, setUser] = useState(initialUser);
+
+  // Account System State
+  const [activeAccount, setActiveAccount] = useState<UserAccount>(() => {
+    return AccountService.getActiveAccount() || SEED_ACCOUNTS[0];
+  });
+  const [isLoggedOut, setIsLoggedOut] = useState(false);
+
+  // User-isolated state
+  const [user, setUser] = useState<UserProfile>(() => activeAccount.profile);
   const [friends, setFriends] = useState(initialFriends);
   const [socialUsers, setSocialUsers] = useState<SocialUser[]>(mockSocialUsers);
-  const [chatThreads, setChatThreads] = useState(initialChatThreads);
+  const [chatThreads, setChatThreads] = useState(() =>
+    AccountService.getSavedChats(activeAccount.id)
+  );
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(mockSocialPosts);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(() =>
+    AccountService.getSavedPosts(activeAccount.id)
+  );
+  const [reels, setReels] = useState<Reel[]>(mockReels);
+  const [notifications, setNotifications] = useState(() =>
+    AccountService.getSavedNotifications(activeAccount.id)
+  );
   const [sharedLinks, setSharedLinks] = useState<SharedLink[]>(mockSharedLinks);
 
   // Modals state
@@ -411,7 +441,7 @@ export default function App() {
   ) => {
     const newPost: SocialPost = {
       ...newPostData,
-      id: `post_${Date.now()}`,
+      id: `post_user_${Date.now()}`,
       timestamp: 'Just now',
       likes: 1,
       isLiked: true,
@@ -419,10 +449,51 @@ export default function App() {
       sharesCount: 0,
       comments: [],
     };
-    setSocialPosts([newPost, ...socialPosts]);
+    setSocialPosts((prev) => {
+      const updated = [newPost, ...prev];
+      AccountService.saveUserPosts(activeAccount.id, updated);
+      return updated;
+    });
   };
 
-  const [isLoggedOut, setIsLoggedOut] = useState(false);
+  const handleCreateReel = (newReelData: {
+    caption: string;
+    videoThumbnail: string;
+    soundTitle: string;
+    soundArtist: string;
+  }) => {
+    const newReel: Reel = {
+      id: `reel_${Date.now()}`,
+      creator: {
+        name: user.name,
+        handle: user.handle,
+        avatar: user.avatar,
+      },
+      caption: newReelData.caption,
+      videoThumbnail: newReelData.videoThumbnail,
+      likes: '1',
+      comments: '0',
+      audioTrack: `${newReelData.soundArtist} - ${newReelData.soundTitle}`,
+      tags: ['#MySpaceReels', '#CyberVibe'],
+    };
+    setReels((prev) => [newReel, ...prev]);
+  };
+
+  const handleUpdateConnectedApp = (
+    platform: ConnectedPlatform,
+    updatedApp: ConnectedAppAccount
+  ) => {
+    const updatedConnectedApps = {
+      ...activeAccount.connectedApps,
+      [platform]: updatedApp,
+    };
+    const updatedAccount: UserAccount = {
+      ...activeAccount,
+      connectedApps: updatedConnectedApps,
+    };
+    AccountService.updateAccount(updatedAccount);
+    setActiveAccount(updatedAccount);
+  };
 
   // NOTIFICATION HANDLERS
   const handleMarkAllNotificationsRead = () => {
@@ -570,18 +641,26 @@ export default function App() {
     avatar: string;
     coverImage: string;
   }) => {
-    setUser((prev) => ({
-      ...prev,
+    const updatedProfile: UserProfile = {
+      ...user,
       name: updated.name,
       handle: updated.handle,
       bio: updated.bio,
       avatar: updated.avatar,
       coverImage: updated.coverImage,
-    }));
+    };
+    setUser(updatedProfile);
+
+    const updatedAccount: UserAccount = {
+      ...activeAccount,
+      profile: updatedProfile,
+    };
+    AccountService.updateAccount(updatedAccount);
+    setActiveAccount(updatedAccount);
 
     // Update any user-authored posts to reflect the new profile details
-    setSocialPosts((prev) =>
-      prev.map((post) => {
+    setSocialPosts((prev) => {
+      const updatedPosts = prev.map((post) => {
         if (
           post.id.startsWith('post_user_') ||
           post.author.handle === user.handle ||
@@ -598,8 +677,10 @@ export default function App() {
           };
         }
         return post;
-      })
-    );
+      });
+      AccountService.saveUserPosts(activeAccount.id, updatedPosts);
+      return updatedPosts;
+    });
   };
 
   const handleUpdateProfileSettings = (updated: {
@@ -608,48 +689,45 @@ export default function App() {
     bio: string;
     avatar: string;
   }) => {
-    setUser((prev) => ({
-      ...prev,
+    const updatedProfile: UserProfile = {
+      ...user,
       name: updated.name,
       handle: updated.handle,
       bio: updated.bio,
       avatar: updated.avatar,
-    }));
+    };
+    setUser(updatedProfile);
+
+    const updatedAccount: UserAccount = {
+      ...activeAccount,
+      profile: updatedProfile,
+    };
+    AccountService.updateAccount(updatedAccount);
+    setActiveAccount(updatedAccount);
   };
 
   const handleLogout = () => {
+    AccountService.setActiveUserId(null);
     setIsLoggedOut(true);
   };
 
-  const handleLoginDemo = () => {
+  const handleLoginSuccess = (account: UserAccount) => {
+    AccountService.setActiveUserId(account.id);
+    setActiveAccount(account);
+    setUser(account.profile);
+    setChatThreads(AccountService.getSavedChats(account.id));
+    setSocialPosts(AccountService.getSavedPosts(account.id));
+    setNotifications(AccountService.getSavedNotifications(account.id));
     setIsLoggedOut(false);
     setCurrentTab('home');
   };
 
   if (isLoggedOut) {
     return (
-      <div className="min-h-screen bg-[#090714] text-slate-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm p-6 rounded-3xl bg-[#0e0a1f] border border-purple-800/60 shadow-[0_0_50px_rgba(236,72,153,0.3)] text-center space-y-5">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 p-0.5 shadow-[0_0_25px_rgba(236,72,153,0.4)]">
-            <div className="w-full h-full bg-[#0b0818] rounded-[14px] flex items-center justify-center font-display font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400">
-              M
-            </div>
-          </div>
-          <div className="space-y-1">
-            <h2 className="font-display font-bold text-xl text-white">Signed Out</h2>
-            <p className="text-xs text-slate-400">
-              You have successfully logged out of your MySpace session.
-            </p>
-          </div>
-          <button
-            id="login-demo-btn"
-            onClick={handleLoginDemo}
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 text-white text-xs font-bold shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:brightness-110 active:scale-95 transition-all"
-          >
-            Log In as {user.name} (Demo)
-          </button>
-        </div>
-      </div>
+      <LoginScreen
+        onLoginSuccess={handleLoginSuccess}
+        allAccounts={AccountService.getAllAccounts()}
+      />
     );
   }
 
@@ -661,6 +739,7 @@ export default function App() {
         {/* Top Header */}
         <Header
           currentTab={currentTab}
+          currentUser={user}
           onSelectTab={(tab) => {
             setActiveChatId(null);
             setCurrentTab(tab);
@@ -674,27 +753,25 @@ export default function App() {
           }}
           onOpenReels={() => handleOpenReels(0)}
           onOpenShare={() => handleOpenShareLink('instagram')}
+          onOpenConnectedApps={() => setCurrentTab('connected-apps')}
         />
 
         {/* Main Content View Container */}
         <main className="flex-1 overflow-y-auto">
           {currentTab === 'home' && (
             <HomeView
+              currentUser={user}
               onSelectTab={(tab) => {
                 setActiveChatId(null);
                 setCurrentTab(tab);
               }}
               onlineFriends={friends}
-              recentChats={chatThreads}
-              reels={mockReels}
+              reels={reels}
               tracks={mockTracks}
               sharedLinks={sharedLinks}
               onOpenReels={handleOpenReels}
-              onOpenYouTube={() => setIsYouTubeOpen(true)}
               onOpenStory={(friend) => setSelectedStoryFriend(friend)}
               onOpenChatThread={handleOpenChatThread}
-              onOpenNotifications={() => setCurrentTab('notifications')}
-              unreadNotificationsCount={unreadNotificationsCount}
               onOpenShareLink={handleOpenShareLink}
               onLikeSharedLink={handleLikeSharedLink}
             />
@@ -717,12 +794,15 @@ export default function App() {
 
           {currentTab === 'social' && (
             <SocialView
+              currentUser={user}
               posts={socialPosts}
               socialUsers={socialUsers}
               friends={friends}
               onLikePost={handleLikePost}
               onAddComment={handleAddComment}
               onCreatePost={handleCreatePost}
+              onCreateReel={handleCreateReel}
+              onOpenReels={() => setIsReelsOpen(true)}
               onToggleFollow={handleToggleFollow}
               onSelectUser={handleOpenSocialUserProfile}
               onOpenNetworkList={handleOpenNetworkList}
@@ -745,6 +825,10 @@ export default function App() {
               user={user}
               posts={socialPosts}
               sharedLinks={sharedLinks}
+              notifications={notifications}
+              unreadNotificationsCount={unreadNotificationsCount}
+              onOpenNotifications={() => setCurrentTab('notifications')}
+              onSelectTab={(tab) => setCurrentTab(tab)}
               onOpenChatWithFriend={handleOpenChatWithFriend}
               onUpdateProfile={handleUpdateFullProfile}
               onOpenNetworkList={handleOpenNetworkList}
@@ -783,6 +867,16 @@ export default function App() {
               onBackToProfile={() => setCurrentTab('profile')}
               onUpdateProfile={handleUpdateProfileSettings}
               onLogout={handleLogout}
+              onNavigateToConnectedApps={() => setCurrentTab('connected-apps')}
+            />
+          )}
+
+          {currentTab === 'connected-apps' && (
+            <ConnectedAppsView
+              user={user}
+              connectedApps={activeAccount.connectedApps}
+              onUpdateConnectedApp={handleUpdateConnectedApp}
+              onBack={() => setCurrentTab('home')}
             />
           )}
         </main>
@@ -807,7 +901,7 @@ export default function App() {
         <ReelsModal
           isOpen={isReelsOpen}
           onClose={() => setIsReelsOpen(false)}
-          reels={mockReels}
+          reels={reels}
           initialReelIndex={selectedReelIndex}
           onShareReel={handleShareReelFromModal}
         />
@@ -870,6 +964,7 @@ export default function App() {
             setVideoCallUser(null);
           }}
           user={videoCallUser}
+          currentUser={user}
         />
 
         <NetworkListModal

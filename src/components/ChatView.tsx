@@ -379,7 +379,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   {['👋 Hey there!', '✨ Love your vibe', '🎮 Up for a game?'].map((starter) => (
                     <button
                       key={starter}
-                      onClick={() => onSendMessage(activeChatId, starter)}
+                      onClick={() => {
+                        if (activeChatId) {
+                          onSendMessage(activeChatId, starter);
+                        }
+                      }}
                       className="px-3 py-1.5 rounded-full bg-purple-950/60 border border-purple-800/40 text-xs text-pink-300 hover:bg-pink-500/20 hover:border-pink-500/60 transition-all cursor-pointer"
                     >
                       {starter}
@@ -392,11 +396,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
             activeThread.messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                className={`flex flex-col ${(msg.isMe || msg.sender === 'user') ? 'items-end' : 'items-start'}`}
               >
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-md leading-relaxed ${
-                    msg.sender === 'user'
+                    (msg.isMe || msg.sender === 'user')
                       ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-br-xs shadow-[0_0_15px_rgba(236,72,153,0.3)]'
                       : 'bg-purple-950/80 border border-purple-800/50 text-slate-100 rounded-bl-xs'
                   }`}
@@ -405,7 +409,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 </div>
                 <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400 font-mono px-1">
                   <span>{msg.timestamp}</span>
-                  {msg.sender === 'user' && (
+                  {(msg.isMe || msg.sender === 'user') && (
                     <CheckCheck className="w-3.5 h-3.5 text-cyan-400 inline" />
                   )}
                 </div>

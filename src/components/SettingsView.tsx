@@ -29,9 +29,11 @@ import {
   UserCheck,
   Trash2,
   Key,
+  Users,
   AlertTriangle,
   RefreshCw,
   Ban,
+  Layers,
 } from 'lucide-react';
 import { UserProfile, UserSettings, BlockedUser, ChatThread } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -49,6 +51,7 @@ interface SettingsViewProps {
   onBackToProfile: () => void;
   onUpdateProfile: (updated: { name: string; handle: string; bio: string; avatar: string }) => void;
   onLogout: () => void;
+  onNavigateToConnectedApps?: () => void;
   allAvailableUsers?: Array<{ id: string; name: string; handle: string; avatar: string }>;
 }
 
@@ -97,6 +100,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onBackToProfile,
   onUpdateProfile,
   onLogout,
+  onNavigateToConnectedApps,
   allAvailableUsers = [],
 }) => {
   // Editable profile state
@@ -146,16 +150,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   });
 
   const activeBlockedList = propBlockedUsers ?? localBlockedUsers;
-
-  // Change Password state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   // Modals state
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -259,46 +253,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
     }
     setSelectedUserToBlock('');
-  };
-
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
-
-    const savedPw = localStorage.getItem('myspace_demo_password_v1') || 'CyberNeon2026!';
-
-    if (!currentPassword) {
-      setPasswordError('Please enter your current demo password.');
-      return;
-    }
-
-    if (currentPassword !== savedPw && currentPassword !== 'CyberNeon2026!') {
-      setPasswordError('Current password is incorrect. (Default demo: CyberNeon2026!)');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setPasswordError('New password must contain at least 6 characters.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New password and confirmation do not match.');
-      return;
-    }
-
-    // Save demo password
-    try {
-      localStorage.setItem('myspace_demo_password_v1', newPassword);
-      setPasswordSuccess('Password successfully changed in local demo sandbox!');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setTimeout(() => setPasswordSuccess(null), 4000);
-    } catch {
-      setPasswordError('Failed to save password locally.');
-    }
   };
 
   const confirmClearSingleChat = () => {
@@ -1250,132 +1204,63 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      {/* 7. SECURITY & ACCOUNT: CHANGE PASSWORD */}
+      {/* 7. ACCOUNT & GUEST ACCESS (NO SECRETS REQUIRED) */}
       <section className="px-4">
         <div className="p-5 rounded-3xl bg-gradient-to-br from-[#160e30] to-[#0e0821] border border-purple-800/50 shadow-[0_0_20px_rgba(168,85,247,0.1)] space-y-4">
           <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                <Key className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-white text-sm">Security & Password</h3>
-                <p className="text-[10px] text-slate-400">Update your simulated demo account password</p>
+                <h3 className="font-display font-bold text-white text-sm">Account & Guest Access</h3>
+                <p className="text-[10px] text-slate-400">100% Demo Mode • No passwords or secrets required</p>
               </div>
             </div>
-            <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-950/60 border border-amber-700/50">
-              DEMO MODE
+            <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-700/50">
+              GUEST ACCESS
             </span>
           </div>
 
-          <div className="p-3 rounded-2xl bg-purple-950/30 border border-purple-800/30 text-xs space-y-1">
-            <div className="flex items-center gap-1.5 text-pink-300 font-semibold text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Demo Security Environment Notice</span>
+          <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-800/30 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  referrerPolicy="no-referrer"
+                  className="w-9 h-9 rounded-full object-cover border border-purple-600"
+                />
+                <div>
+                  <div className="text-xs font-bold text-white">{user.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{user.handle}</div>
+                </div>
+              </div>
+              <span className="text-[10px] text-emerald-400 font-mono px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40">
+                Active Session
+              </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              This app is a prototype social client. Passwords are saved in your local device browser (<code className="text-cyan-300 font-mono">localStorage</code>) to demonstrate simulated authentication workflows without external servers.
+            <p className="text-[11px] text-slate-400 leading-relaxed pt-1">
+              Authentication operates in Guest mode. You can switch profiles or end this guest session at any time with a single click. No passwords or secret keys are stored or needed.
             </p>
           </div>
 
-          {passwordError && (
-            <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{passwordError}</span>
-            </div>
-          )}
-
-          {passwordSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
-              <Check className="w-4 h-4 shrink-0" />
-              <span>{passwordSuccess}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleChangePassword} className="space-y-3 pt-1">
-            {/* Current Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 block">
-                Current Password
-              </label>
-              <div className="relative">
-                <input
-                  id="settings-current-password"
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="w-full pl-3 pr-9 py-2 bg-black/40 border border-purple-800/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-2 text-slate-400 hover:text-white"
-                  title={showCurrentPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showCurrentPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* New Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 block">
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  id="settings-new-password"
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min 6 characters"
-                  className="w-full pl-3 pr-9 py-2 bg-black/40 border border-purple-800/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-2 text-slate-400 hover:text-white"
-                  title={showNewPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm New Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 block">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <input
-                  id="settings-confirm-password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-type new password"
-                  className="w-full pl-3 pr-9 py-2 bg-black/40 border border-purple-800/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-2 text-slate-400 hover:text-white"
-                  title={showConfirmPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
+          <div className="flex items-center gap-2 pt-1">
             <button
-              id="settings-update-password-btn"
-              type="submit"
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-black font-bold text-xs hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              type="button"
+              onClick={onLogout}
+              className="flex-1 py-2.5 rounded-xl bg-purple-900/50 hover:bg-purple-800/60 border border-purple-700/50 text-white font-bold text-xs hover:border-pink-500/60 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
-              <Key className="w-3.5 h-3.5" /> Update Password
+              <Users className="w-3.5 h-3.5 text-pink-400" /> Switch Guest Profile
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => setIsLogoutModalOpen(true)}
+              className="py-2.5 px-4 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800/50 text-rose-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" /> End Session
+            </button>
+          </div>
         </div>
       </section>
 
@@ -1447,6 +1332,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
+        {/* Connected Apps Section */}
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#120d29] via-[#0d0921] to-[#070514] border border-cyan-800/40 space-y-3">
+          <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                <Layers className="w-4 h-4" />
+              </div>
+              <h3 className="font-display font-bold text-white text-sm">Connected Apps (Official Integrations)</h3>
+            </div>
+            <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">
+              META & GOOGLE
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Manage your connected Instagram, Facebook, and YouTube accounts safely. MySpace uses standard OAuth 2.0 authorization and never collects or stores your external passwords.
+          </p>
+
+          <button
+            id="settings-connected-apps-btn"
+            type="button"
+            onClick={onNavigateToConnectedApps}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Manage Connected Apps</span>
+          </button>
+        </div>
+
         {/* About MySpace Section */}
         <div className="p-5 rounded-3xl bg-gradient-to-br from-[#140e2b] to-[#0c071a] border border-purple-800/40 space-y-3">
           <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
@@ -1492,7 +1406,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={onLogout}
         title="Log Out of MySpace?"
-        message="Are you sure you want to end your current demo session? You can easily sign back in using the demo login screen with your handle and password."
+        message="Are you sure you want to end your current demo session? You can return anytime with instant 1-click Guest login without needing passwords or secrets."
         confirmText="Log Out"
         cancelText="Stay Logged In"
         type="danger"

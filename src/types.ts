@@ -6,7 +6,8 @@ export type TabType =
   | 'games'
   | 'profile'
   | 'notifications'
-  | 'settings';
+  | 'settings'
+  | 'connected-apps';
 
 export interface UserProfile {
   id: string;
@@ -45,6 +46,7 @@ export interface Friend {
 export interface Message {
   id: string;
   senderId: string;
+  sender?: 'user' | 'other' | string;
   text: string;
   timestamp: string;
   isMe: boolean;
@@ -207,6 +209,11 @@ export interface SocialUser {
     artist: string;
     duration: string;
   };
+  anthem?: {
+    title: string;
+    artist: string;
+    duration?: string;
+  };
   badges?: string[];
   tags?: string[];
   recentGameScore?: number;
@@ -222,6 +229,35 @@ export interface MusicTrack {
   duration: string;
   audioUrl?: string;
   genre?: string;
+  language?: string;
+  country?: string;
+  countryFlag?: string;
+  category?:
+    | 'hindi'
+    | 'bengali'
+    | 'english'
+    | 'korean'
+    | 'japanese'
+    | 'chinese'
+    | 'spanish'
+    | 'arabic'
+    | 'french'
+    | 'international'
+    | 'local'
+    | string;
+  releaseYear?: number | string;
+  isPopular?: boolean;
+  isNewRelease?: boolean;
+  isTrending?: boolean;
+  isRecommended?: boolean;
+  isLocalFile?: boolean;
+  isPlayableInApp?: boolean;
+  audioNote?: string;
+  externalLinks?: {
+    spotify?: string;
+    youtubeMusic?: string;
+    appleMusic?: string;
+  };
   isPlaying?: boolean;
 }
 
@@ -230,6 +266,7 @@ export interface Playlist {
   name: string;
   description?: string;
   cover?: string;
+  country?: string;
   trackIds: string[];
   createdAt: string;
 }
@@ -244,3 +281,25 @@ export interface GameItem {
   isMiniGamePlayable?: boolean;
   gameType?: 'reflex' | 'matrix' | 'runner';
 }
+
+export type ConnectedPlatform = 'instagram' | 'facebook' | 'youtube';
+
+export interface ConnectedAppAccount {
+  platform: ConnectedPlatform;
+  isConnected: boolean;
+  username?: string;
+  connectedAt?: string;
+  profileUrl?: string;
+  grantedScopes?: string[];
+  externalId?: string;
+}
+
+export interface UserAccount {
+  id: string;
+  email: string;
+  password?: string;
+  profile: UserProfile;
+  connectedApps: Record<ConnectedPlatform, ConnectedAppAccount>;
+  createdAt: string;
+}
+

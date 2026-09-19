@@ -29,8 +29,11 @@ import {
   Calendar,
   Layers,
   Lock,
+  Bell,
+  Radio,
+  ChevronRight,
 } from 'lucide-react';
-import { UserProfile, Friend, SocialPost, SharedLink, MusicTrack, Reel, UserSettings } from '../types';
+import { UserProfile, Friend, SocialPost, SharedLink, MusicTrack, Reel, UserSettings, NotificationItem, TabType } from '../types';
 import { EditProfileModal } from './EditProfileModal';
 
 interface ProfileViewProps {
@@ -39,6 +42,10 @@ interface ProfileViewProps {
   sharedLinks?: SharedLink[];
   favoriteTracks?: MusicTrack[];
   favoriteReels?: Reel[];
+  notifications?: NotificationItem[];
+  unreadNotificationsCount?: number;
+  onOpenNotifications?: () => void;
+  onSelectTab?: (tab: TabType) => void;
   onOpenChatWithFriend: (friend: Friend) => void;
   onUpdateProfile: (updatedData: {
     name: string;
@@ -67,6 +74,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   sharedLinks = [],
   favoriteTracks = [],
   favoriteReels = [],
+  notifications = [],
+  unreadNotificationsCount = 0,
+  onOpenNotifications,
+  onSelectTab,
   onOpenChatWithFriend,
   onUpdateProfile,
   onOpenNetworkList,
@@ -82,7 +93,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   settings,
 }) => {
   const [isPlayingSong, setIsPlayingSong] = useState(false);
-  const [activeTab, setActiveTab] = useState<'posts' | 'links' | 'favorites' | 'top8' | 'gallery'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'entertainment' | 'notifications' | 'links' | 'top8' | 'favorites' | 'gallery'>('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isVisitorFollowing, setIsVisitorFollowing] = useState(false);
@@ -475,15 +486,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         )}
       </div>
 
-      {/* 5. SEPARATE CONTENT TABS: POSTS, SHARED LINKS, FAVORITES, TOP 8 & GALLERY (Requirement 6) */}
-      <div className="px-4 space-y-3.5">
-        <div className="flex bg-[#0d091e] p-1 rounded-2xl border border-purple-800/40 text-xs overflow-x-auto gap-1">
+      {/* 5. SEPARATE CONTENT TABS: POSTS, ENTERTAINMENT, NOTIFICATIONS, SHARED LINKS, TOP 8, FAVORITES */}
+      <div className="px-3 space-y-3">
+        <div className="flex bg-[#0d091e] p-1 rounded-xl border border-purple-800/40 text-xs overflow-x-auto gap-1 no-scrollbar">
           <button
             id="tab-posts-btn"
             onClick={() => setActiveTab('posts')}
-            className={`flex-1 py-2 px-3 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'posts'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -492,44 +503,278 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </button>
 
           <button
+            id="tab-entertainment-btn"
+            onClick={() => setActiveTab('entertainment')}
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'entertainment'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Film className="w-3.5 h-3.5 text-pink-300" />
+            Entertainment
+          </button>
+
+          <button
+            id="tab-notifications-btn"
+            onClick={() => setActiveTab('notifications')}
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer relative ${
+              activeTab === 'notifications'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Alerts</span>
+            {unreadNotificationsCount > 0 && (
+              <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+            )}
+          </button>
+
+          <button
             id="tab-links-btn"
             onClick={() => setActiveTab('links')}
-            className={`flex-1 py-2 px-3 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'links'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <LinkIcon className="w-3.5 h-3.5" />
-            Shared Links ({userSharedLinks.length})
-          </button>
-
-          <button
-            id="tab-favorites-btn"
-            onClick={() => setActiveTab('favorites')}
-            className={`flex-1 py-2 px-3 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-              activeTab === 'favorites'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Bookmark className="w-3.5 h-3.5" />
-            Favorites
+            Links ({userSharedLinks.length})
           </button>
 
           <button
             id="tab-top8-btn"
             onClick={() => setActiveTab('top8')}
-            className={`flex-1 py-2 px-3 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'top8'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Award className="w-3.5 h-3.5" />
+            <Award className="w-3.5 h-3.5 text-amber-300" />
             Top 8
           </button>
+
+          <button
+            id="tab-favorites-btn"
+            onClick={() => setActiveTab('favorites')}
+            className={`py-1.5 px-2.5 rounded-lg font-bold text-xs transition-all whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'favorites'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Saved
+          </button>
         </div>
+
+        {/* ================= TAB: ENTERTAINMENT HUBS (MOVED FROM HOME) ================= */}
+        {activeTab === 'entertainment' && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-[#140e2b] border border-purple-800/60 shadow-sm space-y-2">
+              <div className="flex items-center justify-between pb-1.5 border-b border-purple-900/40">
+                <div>
+                  <h3 className="font-display font-bold text-xs text-white">
+                    Entertainment & Media Hubs
+                  </h3>
+                  <p className="text-[10px] text-slate-400">
+                    Connect and launch your favorite social & media services
+                  </p>
+                </div>
+                {onSelectTab && (
+                  <button
+                    onClick={() => onSelectTab('connected-apps')}
+                    className="text-[10px] px-2 py-0.5 rounded bg-purple-900/60 hover:bg-pink-600 border border-purple-700/50 text-pink-200 hover:text-white font-mono transition-all cursor-pointer"
+                  >
+                    OAuth Hub →
+                  </button>
+                )}
+              </div>
+
+              {/* Compact Retro Grid of Entertainment Hubs */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {/* Instagram Hub */}
+                <div
+                  onClick={() => onSelectTab?.('connected-apps')}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-pink-500/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    IG
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-pink-300 truncate">
+                      Instagram
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Posts & Drops</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-pink-400 shrink-0" />
+                </div>
+
+                {/* Facebook Hub */}
+                <div
+                  onClick={() => onSelectTab?.('connected-apps')}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-blue-500/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-[#1877F2] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    f
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-blue-300 truncate">
+                      Facebook
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Feed & Groups</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 shrink-0" />
+                </div>
+
+                {/* YouTube Hub */}
+                <div
+                  onClick={() => onSelectTab?.('connected-apps')}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-red-500/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-[#FF0000] flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    ▶
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-red-300 truncate">
+                      YouTube
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Music & Videos</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-red-400 shrink-0" />
+                </div>
+
+                {/* Cyber Reels Hub */}
+                <div
+                  onClick={() => onOpenReel?.(0)}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-pink-500/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-tr from-pink-600 to-rose-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    <Radio className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-pink-300 truncate">
+                      Reels
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Short Video Clips</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-pink-400 shrink-0" />
+                </div>
+
+                {/* Music Player */}
+                <div
+                  onClick={() => onSelectTab?.('music')}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-cyan-500/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    <Music className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 truncate">
+                      Cyber Beats
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Music Player FM</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 shrink-0" />
+                </div>
+
+                {/* Arcade Games */}
+                <div
+                  onClick={() => onSelectTab?.('games')}
+                  className="p-2.5 rounded-lg bg-[#0d091e] border border-purple-900/50 hover:border-purple-400/60 transition-all cursor-pointer group flex items-center gap-2.5"
+                >
+                  <div className="w-8 h-8 rounded-md bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                    <Gamepad2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-white group-hover:text-purple-300 truncate">
+                      Arcade Games
+                    </h4>
+                    <p className="text-[10px] text-slate-400 truncate">Retro 2008 Hits</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-400 shrink-0" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TAB: NOTIFICATIONS (MOVED FROM HOME) ================= */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-[#140e2b] border border-purple-800/60 shadow-sm space-y-2.5">
+              <div className="flex items-center justify-between pb-1.5 border-b border-purple-900/40">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-cyan-400" />
+                  <h3 className="font-display font-bold text-xs text-white">
+                    Notifications & Activity
+                  </h3>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-white font-mono text-[9px] font-bold">
+                      {unreadNotificationsCount} unread
+                    </span>
+                  )}
+                </div>
+                {onOpenNotifications && (
+                  <button
+                    onClick={onOpenNotifications}
+                    className="text-[10px] text-pink-300 hover:text-white font-mono cursor-pointer"
+                  >
+                    Manage All →
+                  </button>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="p-4 rounded-lg bg-[#0d091e] border border-purple-900/40 text-center text-slate-400 text-xs">
+                  No notifications yet. You're all caught up! ✨
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {notifications.slice(0, 6).map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-2.5 rounded-lg border transition-all flex items-start gap-2.5 ${
+                        !item.isRead
+                          ? 'bg-purple-950/40 border-pink-500/40 shadow-xs'
+                          : 'bg-[#0d091e] border-purple-900/30 text-slate-300'
+                      }`}
+                    >
+                      {item.avatar ? (
+                        <img
+                          src={item.avatar}
+                          alt={item.senderName || 'User'}
+                          referrerPolicy="no-referrer"
+                          className="w-7 h-7 rounded-md object-cover border border-purple-700/60 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-md bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400 text-xs font-bold shrink-0">
+                          <Bell className="w-3.5 h-3.5" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-white truncate">
+                            {item.title}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                            {item.time}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 mt-0.5 line-clamp-2">
+                          {item.message}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ================= TAB 1: POSTS ================= */}
         {activeTab === 'posts' && (

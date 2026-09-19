@@ -18,6 +18,12 @@ interface MusicContextType {
   audioError: string | null;
   currentQueue: MusicTrack[];
   isLoading: boolean;
+  userTracks: MusicTrack[];
+  unplayableModalTrack: MusicTrack | null;
+  setUnplayableModalTrack: (track: MusicTrack | null) => void;
+  addLocalTrack: (file: File) => Promise<MusicTrack>;
+  removeLocalTrack: (trackId: string) => void;
+  openExternalProvider: (track: MusicTrack, platform?: 'youtubeMusic' | 'spotify' | 'appleMusic') => void;
   playTrack: (track: MusicTrack, newQueue?: MusicTrack[]) => void;
   pauseTrack: () => void;
   togglePlay: () => void;
@@ -39,31 +45,72 @@ interface MusicContextType {
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
-const FAVORITES_STORAGE_KEY = 'myspace_music_favorites_v1';
-const PLAYLISTS_STORAGE_KEY = 'myspace_music_playlists_v1';
-const RECENT_STORAGE_KEY = 'myspace_music_recent_v1';
+const FAVORITES_STORAGE_KEY = 'myspace_music_favorites_v2';
+const PLAYLISTS_STORAGE_KEY = 'myspace_music_playlists_v2';
+const RECENT_STORAGE_KEY = 'myspace_music_recent_v2';
+const USER_TRACKS_STORAGE_KEY = 'myspace_music_user_tracks_v2';
+const PREFS_STORAGE_KEY = 'myspace_music_prefs_v2';
 
 export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tracks] = useState<MusicTrack[]>(demoTracks);
-  const [currentQueue, setCurrentQueue] = useState<MusicTrack[]>(demoTracks);
-  const [currentTrack, setCurrentTrack] = useState<MusicTrack>(demoTracks[0]);
+  // User uploaded local audio tracks
+  const [userTracks, setUserTracks] = useState<MusicTrack[]>(() => {
+    try {
+      const stored = localStorage.getItem(USER_TRACKS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Master tracklist: user-uploaded tracks + international curated catalog
+  const tracks = useMemo<MusicTrack[]>(() => {
+    return [...userTracks, ...demoTracks];
+  }, [userTracks]);
+
+  const [currentQueue, setCurrentQueue] = useState<MusicTrack[]>(() => [...userTracks, ...demoTracks]);
+  const [currentTrack, setCurrentTrack] = useState<MusicTrack>(() => userTracks[0] || demoTracks[0]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolumeState] = useState(0.8);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('all');
+
+  // Stored Preferences (volume, repeat, shuffle)
+  const savedPrefs = useMemo<{
+    volume?: number;
+    isMuted?: boolean;
+    isShuffle?: boolean;
+    repeatMode?: 'off' | 'all' | 'one';
+  } | null>(() => {
+    try {
+      const stored = localStorage.getItem(PREFS_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const [volume, setVolumeState] = useState<number>(
+    typeof savedPrefs?.volume === 'number' ? savedPrefs.volume : 0.8
+  );
+  const [isMuted, setIsMuted] = useState<boolean>(
+    typeof savedPrefs?.isMuted === 'boolean' ? savedPrefs.isMuted : false
+  );
+  const [isShuffle, setIsShuffle] = useState<boolean>(
+    typeof savedPrefs?.isShuffle === 'boolean' ? savedPrefs.isShuffle : false
+  );
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>(
+    savedPrefs?.repeatMode === 'off' || savedPrefs?.repeatMode === 'one' ? savedPrefs.repeatMode : 'all'
+  );
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [unplayableModalTrack, setUnplayableModalTrack] = useState<MusicTrack | null>(null);
 
   // Persistent Favorites
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : ['track_1', 'track_3', 'track_5'];
+      return stored ? JSON.parse(stored) : ['track_hi_1', 'track_bn_1', 'track_en_1', 'track_ko_1', 'track_ja_1'];
     } catch {
-      return ['track_1', 'track_3', 'track_5'];
+      return ['track_hi_1', 'track_bn_1', 'track_en_1', 'track_ko_1', 'track_ja_1'];
     }
   });
 
@@ -81,9 +128,9 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [recentlyPlayed, setRecentlyPlayed] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(RECENT_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : ['track_1', 'track_2'];
+      return stored ? JSON.parse(stored) : ['track_hi_1', 'track_en_1'];
     } catch {
-      return ['track_1', 'track_2'];
+      return ['track_hi_1', 'track_en_1'];
     }
   });
 
@@ -126,7 +173,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const handleError = () => {
       setIsPlaying(false);
       setIsLoading(false);
-      setAudioError('Audio stream could not be loaded or played. Please try another track.');
+      setAudioError('Audio stream could not be loaded or played. Please try another track or upload an audio file.');
     };
 
     const handleEnded = () => {
@@ -148,7 +195,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     audio.addEventListener('error', handleError);
     audio.addEventListener('ended', handleEnded);
 
-    // Initial volume
     audio.volume = volume;
     audio.muted = isMuted;
 
@@ -193,7 +239,33 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [recentlyPlayed]);
 
-  // Keep volume & mute in sync
+  // Save user tracks (metadata without large blob data)
+  useEffect(() => {
+    try {
+      // Save user tracks metadata
+      const serializableTracks = userTracks.map(t => ({
+        ...t,
+        // Blob URLs expire across browser reloads, but metadata persists
+      }));
+      localStorage.setItem(USER_TRACKS_STORAGE_KEY, JSON.stringify(serializableTracks));
+    } catch (e) {
+      console.error('Failed to save user tracks', e);
+    }
+  }, [userTracks]);
+
+  // Save preferences
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PREFS_STORAGE_KEY,
+        JSON.stringify({ volume, isMuted, isShuffle, repeatMode })
+      );
+    } catch (e) {
+      console.error('Failed to save music preferences', e);
+    }
+  }, [volume, isMuted, isShuffle, repeatMode]);
+
+  // Keep volume & mute in sync with HTML5 audio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
@@ -222,37 +294,44 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAudioError(null);
     setCurrentTrack(track);
 
-    // Record in recently played (max 20)
-    setRecentlyPlayed((prev) => [track.id, ...prev.filter((id) => id !== track.id)].slice(0, 20));
+    // Record in recently played (max 25)
+    setRecentlyPlayed((prev) => [track.id, ...prev.filter((id) => id !== track.id)].slice(0, 25));
 
-    // Fallback duration from track object if metadata takes time
+    // Check if this track is a licensed commercial track not playable in-app
+    if (track.isPlayableInApp === false || !track.audioUrl) {
+      audio.pause();
+      setIsPlaying(false);
+      setIsLoading(false);
+      setAudioError(
+        `"${track.title}" is a licensed track. Full streaming requires an authorized music provider like YouTube Music or Spotify.`
+      );
+      setUnplayableModalTrack(track);
+      return;
+    }
+
+    // Set fallback duration from track object if metadata takes time
     if (track.duration) {
       const parsed = parseTimeString(track.duration);
       if (parsed > 0) setDuration(parsed);
     }
 
-    if (track.audioUrl) {
-      setIsLoading(true);
-      if (audio.src !== track.audioUrl) {
-        audio.src = track.audioUrl;
-        audio.load();
-      }
-      audio
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setIsLoading(false);
-        })
-        .catch((err) => {
-          console.warn('Autoplay/playback error:', err);
-          setIsPlaying(false);
-          setIsLoading(false);
-          setAudioError('Tap Play button to initiate playback (browser audio policy or network stream).');
-        });
-    } else {
-      setIsPlaying(false);
-      setAudioError('No audio stream URL available for this track.');
+    setIsLoading(true);
+    if (audio.src !== track.audioUrl) {
+      audio.src = track.audioUrl;
+      audio.load();
     }
+    audio
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Autoplay/playback error:', err);
+        setIsPlaying(false);
+        setIsLoading(false);
+        setAudioError('Tap Play to initiate playback (browser autoplay policy or connection).');
+      });
   };
 
   const pauseTrack = () => {
@@ -269,6 +348,14 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (isPlaying) {
       pauseTrack();
     } else {
+      if (currentTrack.isPlayableInApp === false || !currentTrack.audioUrl) {
+        setUnplayableModalTrack(currentTrack);
+        setAudioError(
+          `"${currentTrack.title}" requires official YouTube Music or Spotify streaming.`
+        );
+        return;
+      }
+
       setAudioError(null);
       if (!audio.src && currentTrack.audioUrl) {
         audio.src = currentTrack.audioUrl;
@@ -285,7 +372,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.warn('Audio play failed:', err);
           setIsPlaying(false);
           setIsLoading(false);
-          setAudioError('Audio playback failed or was blocked. Click play to retry.');
+          setAudioError('Audio playback failed or was blocked by browser. Click Play to retry.');
         });
     }
   };
@@ -317,7 +404,6 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const prevTrack = () => {
     const audio = audioRef.current;
-    // If more than 3 seconds in, restart the song
     if (audio && audio.currentTime > 3) {
       audio.currentTime = 0;
       setCurrentTime(0);
@@ -378,8 +464,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const createPlaylist = (name: string, description?: string): Playlist => {
     const newPlaylist: Playlist = {
       id: `pl_${Date.now()}`,
-      name: name.trim() || 'My Neon Playlist',
-      description: description?.trim() || 'Curated cyberpunk tracks',
+      name: name.trim() || 'My International Playlist',
+      description: description?.trim() || 'Curated international music tracks',
       cover: currentTrack.cover || demoTracks[0].cover,
       trackIds: [currentTrack.id],
       createdAt: 'Just now',
@@ -418,6 +504,80 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAudioError(null);
   };
 
+  // Add a local audio file from user's device
+  const addLocalTrack = async (file: File): Promise<MusicTrack> => {
+    const audioUrl = URL.createObjectURL(file);
+    const cleanName = file.name
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[-_]/g, ' ')
+      .trim();
+
+    // Default duration estimate or read via temporary audio object
+    let calculatedDuration = '3:30';
+    try {
+      const tempAudio = new Audio(audioUrl);
+      await new Promise<void>((resolve) => {
+        tempAudio.onloadedmetadata = () => {
+          const m = Math.floor(tempAudio.duration / 60);
+          const s = Math.floor(tempAudio.duration % 60);
+          calculatedDuration = `${m}:${s < 10 ? '0' : ''}${s}`;
+          resolve();
+        };
+        tempAudio.onerror = () => resolve();
+        setTimeout(resolve, 1500);
+      });
+    } catch {
+      // Fallback duration
+    }
+
+    const newTrack: MusicTrack = {
+      id: `local_track_${Date.now()}`,
+      title: cleanName || 'Local Device Audio',
+      artist: 'Device Storage',
+      album: 'My Uploads',
+      genre: 'Local Audio',
+      language: 'User Device',
+      country: 'My Device',
+      countryFlag: '💾',
+      category: 'local',
+      cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=500&q=80',
+      duration: calculatedDuration,
+      audioUrl: audioUrl,
+      isPlayableInApp: true,
+      isLocalFile: true,
+      releaseYear: 'Local File',
+      audioNote: 'Direct playback from your device file system',
+      externalLinks: {
+        youtubeMusic: `https://music.youtube.com/search?q=${encodeURIComponent(cleanName)}`,
+        spotify: `https://open.spotify.com/search/${encodeURIComponent(cleanName)}`,
+      },
+    };
+
+    setUserTracks((prev) => [newTrack, ...prev]);
+    playTrack(newTrack);
+    return newTrack;
+  };
+
+  const removeLocalTrack = (trackId: string) => {
+    setUserTracks((prev) => prev.filter((t) => t.id !== trackId));
+  };
+
+  // Helper to open an external service for a track
+  const openExternalProvider = (track: MusicTrack, platform: 'youtubeMusic' | 'spotify' | 'appleMusic' = 'youtubeMusic') => {
+    const q = `${track.artist} ${track.title}`;
+    let targetUrl = `https://music.youtube.com/search?q=${encodeURIComponent(q)}`;
+
+    if (platform === 'spotify') {
+      targetUrl = track.externalLinks?.spotify || `https://open.spotify.com/search/${encodeURIComponent(q)}`;
+    } else if (platform === 'appleMusic') {
+      targetUrl = track.externalLinks?.appleMusic || `https://music.apple.com/search?term=${encodeURIComponent(q)}`;
+    } else {
+      targetUrl = track.externalLinks?.youtubeMusic || `https://music.youtube.com/search?q=${encodeURIComponent(q)}`;
+    }
+
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const contextValue = useMemo(
     () => ({
       tracks,
@@ -435,6 +595,12 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioError,
       currentQueue,
       isLoading,
+      userTracks,
+      unplayableModalTrack,
+      setUnplayableModalTrack,
+      addLocalTrack,
+      removeLocalTrack,
+      openExternalProvider,
       playTrack,
       pauseTrack,
       togglePlay,
@@ -469,6 +635,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audioError,
       currentQueue,
       isLoading,
+      userTracks,
+      unplayableModalTrack,
     ]
   );
 

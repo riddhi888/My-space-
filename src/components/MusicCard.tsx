@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, SkipForward, SkipBack, Music, Volume2, VolumeX, Disc, Maximize2 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Music, Volume2, VolumeX, Disc, Maximize2, ExternalLink } from 'lucide-react';
 import { MusicTrack } from '../types';
 import { useMusic } from '../context/MusicContext';
 
@@ -20,9 +20,11 @@ export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
     seekTo,
     isMuted,
     toggleMute,
+    openExternalProvider,
   } = useMusic();
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const isLicensedOnly = currentTrack.isPlayableInApp === false || !currentTrack.audioUrl;
 
   const formatTime = (secs: number) => {
     if (isNaN(secs) || secs < 0) return '0:00';
@@ -64,7 +66,11 @@ export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-pink-400 tracking-wider uppercase flex items-center gap-1">
-              <Music className="w-3 h-3" /> Cyber Radio
+              <Music className="w-3 h-3" />
+              <span>International Radio</span>
+              {currentTrack.countryFlag && (
+                <span className="ml-1 text-xs">{currentTrack.countryFlag}</span>
+              )}
             </span>
             {/* Visualizer bars */}
             <div className="flex items-end gap-0.5 h-3.5">
@@ -91,8 +97,8 @@ export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
           </h4>
           <p className="text-xs text-cyan-300 truncate">
             {currentTrack.artist}
-            {currentTrack.album && (
-              <span className="text-slate-400"> • {currentTrack.album}</span>
+            {currentTrack.language && (
+              <span className="text-slate-400"> • {currentTrack.language}</span>
             )}
           </p>
         </div>
@@ -166,7 +172,16 @@ export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
           </button>
         </div>
 
-        {onOpenFullPlayer ? (
+        {isLicensedOnly ? (
+          <button
+            onClick={() => openExternalProvider(currentTrack, 'youtubeMusic')}
+            className="text-[10px] font-semibold text-red-300 hover:text-red-200 px-2 py-0.5 rounded bg-red-950/40 border border-red-800/40 hover:border-red-600/60 flex items-center gap-1 transition-all"
+            title="Open on YouTube Music"
+          >
+            <span>YouTube</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </button>
+        ) : onOpenFullPlayer ? (
           <button
             onClick={onOpenFullPlayer}
             className="text-[11px] font-mono text-pink-400 hover:text-pink-300 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20 hover:border-pink-500/50 flex items-center gap-1 transition-all"

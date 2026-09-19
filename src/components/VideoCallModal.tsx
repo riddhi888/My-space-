@@ -1,23 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { PhoneOff, Mic, MicOff, Video, VideoOff, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
-import { SocialUser } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { PhoneOff, Mic, MicOff, Video, VideoOff, RefreshCw, Sparkles, ShieldCheck, Camera, Info } from 'lucide-react';
+import { SocialUser, UserProfile } from '../types';
 
 interface VideoCallModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: SocialUser | null;
+  currentUser?: UserProfile;
 }
 
 export const VideoCallModal: React.FC<VideoCallModalProps> = ({
   isOpen,
   onClose,
   user,
+  currentUser,
 }) => {
   const [callDuration, setCallDuration] = useState(0);
   const [callStatus, setCallStatus] = useState<'connecting' | 'connected' | 'ended'>('connecting');
   const [isVideoActive, setIsVideoActive] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [cyberFilter, setCyberFilter] = useState<'neon' | 'cyber' | 'synth'>('neon');
+  const [useRealCamera, setUseRealCamera] = useState(false);
+  const [showWebRtcNotice, setShowWebRtcNotice] = useState(false);
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!isOpen || !user) {
@@ -25,6 +32,11 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
       setCallStatus('connecting');
       setIsVideoActive(true);
       setIsMuted(false);
+      setUseRealCamera(false);
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
       return;
     }
 
@@ -45,6 +57,34 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
     return () => clearInterval(interval);
   }, [isOpen, callStatus]);
 
+  // Handle live webcam toggle
+  const toggleRealCamera = async () => {
+    if (useRealCamera) {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+      }
+      setUseRealCamera(false);
+    } else {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          mediaStreamRef.current = stream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.play();
+          }
+          setUseRealCamera(true);
+        }
+      } catch (e) {
+        console.warn('Could not acquire real camera stream:', e);
+      }
+    }
+  };
+
   if (!isOpen || !user) return null;
 
   const formatTime = (seconds: number) => {
@@ -53,48 +93,101 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const cycleFilter = () => {
-    const filters: ('neon' | 'cyber' | 'synth')[] = ['neon', 'cyber', 'synth'];
-    const nextIdx = (filters.indexOf(cyberFilter) + 1) % filters.length;
-    setCyberFilter(filters[nextIdx]);
-  };
-
   const handleEndCall = () => {
     setCallStatus('ended');
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+    }
     setTimeout(() => {
       onClose();
     }, 500);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 sm:p-4">
-      <div className="relative w-full max-w-md h-full sm:h-[90vh] bg-[#070512] border border-purple-800/50 rounded-none sm:rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(168,85,247,0.4)] flex flex-col justify-between">
-        {/* Remote Video Stream Area */}
-        <div className="relative flex-1 w-full bg-gradient-to-b from-[#150a2b] via-[#0b071a] to-[#080514] overflow-hidden flex flex-col items-center justify-center">
-          {/* Cyberpunk Scanlines and Grid Overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.4)_51%)] bg-[length:100%_4px] pointer-events-none opacity-40" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/30 via-black/60 to-black pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4">
+      <div className="relative w-full max-w-md h-[90vh] max-h-[700px] bg-[#090714] border border-pink-500/40 rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(236,72,153,0.35)] flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200">
+        {/* Call Header */}
+        <div className="bg-gradient-to-b from-[#090714] via-[#090714]/80 to-transparent p-4 flex items-center justify-between z-30">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse" />
+            <span className="text-xs font-mono font-bold tracking-widest text-pink-300 uppercase">
+              WebRTC Video Hub
+            </span>
+          </div>
 
-          {/* Futuristic HUD Elements */}
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-black/60 border border-purple-700/50 backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-[11px] font-mono font-bold text-cyan-300 uppercase tracking-widest">
-                {callStatus === 'connected' ? `LIVE • ${formatTime(callDuration)}` : 'ESTABLISHING LINK...'}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            {/* Info toggle for WebRTC architecture note */}
+            <button
+              onClick={() => setShowWebRtcNotice(!showWebRtcNotice)}
+              className="px-2 py-1 rounded-lg bg-purple-900/60 border border-purple-700/50 text-[10px] text-cyan-300 font-mono flex items-center gap-1 hover:bg-purple-800/60 transition-colors cursor-pointer"
+              title="View Signaling Architecture Details"
+            >
+              <Info className="w-3 h-3" />
+              <span>WebRTC Info</span>
+            </button>
 
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-2xl bg-black/60 border border-pink-500/40 text-[10px] font-mono text-pink-300">
-              <ShieldCheck className="w-3 h-3 text-pink-400" />
-              <span>4K 60FPS</span>
+            {/* Filter Switcher */}
+            <button
+              onClick={() =>
+                setCyberFilter((prev) =>
+                  prev === 'neon' ? 'cyber' : prev === 'cyber' ? 'synth' : 'neon'
+                )
+              }
+              className="p-1.5 rounded-xl bg-purple-950/60 border border-purple-700/50 text-xs text-pink-300 hover:text-white transition-colors cursor-pointer"
+              title="Switch Cyber Lens"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* WebRTC Architecture Notice Banner */}
+        {showWebRtcNotice && (
+          <div className="mx-4 mb-2 p-2.5 rounded-2xl bg-purple-950/90 border border-cyan-500/40 text-[11px] text-cyan-200 font-sans z-30 shadow-lg space-y-1">
+            <p className="font-bold flex items-center gap-1 text-cyan-300">
+              <ShieldCheck className="w-3.5 h-3.5" /> WebRTC Signaling Architecture
+            </p>
+            <p className="text-[10px] leading-relaxed text-slate-300">
+              MySpace provides peer-to-peer call interfaces. For real-time production calling between separate devices, integrate a WebRTC signaling service (via WebSocket/STUN/TURN) to exchange SDP offers/answers and ICE candidates.
+            </p>
+          </div>
+        )}
+
+        {/* Main Stage View (Remote User Simulation + Status) */}
+        <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+          {/* Neon backdrop ambiance */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-transparent z-10" />
+
+          {/* Call Status Overlay */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-purple-500/30 text-xs font-mono">
+              {callStatus === 'connecting' && (
+                <>
+                  <RefreshCw className="w-3 h-3 text-pink-400 animate-spin" />
+                  <span className="text-pink-300">Connecting link...</span>
+                </>
+              )}
+              {callStatus === 'connected' && (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-300 font-bold">{formatTime(callDuration)}</span>
+                </>
+              )}
+              {callStatus === 'ended' && (
+                <span className="text-rose-400">Call Terminated</span>
+              )}
             </div>
           </div>
 
-          {/* Remote Video Content */}
+          {/* Remote Video / Avatar Content */}
           <div className="relative flex flex-col items-center justify-center space-y-4 z-10">
             {/* Animated Cyber Ring Avatar */}
             <div className="relative">
-              <div className="absolute -inset-6 rounded-full border border-pink-500/30 animate-spin" style={{ animationDuration: '10s' }} />
+              <div
+                className="absolute -inset-6 rounded-full border border-pink-500/30 animate-spin"
+                style={{ animationDuration: '10s' }}
+              />
               <div className="absolute -inset-3 rounded-full border border-cyan-400/40 animate-ping opacity-30" />
 
               <div className="relative p-2 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-[0_0_50px_rgba(236,72,153,0.5)]">
@@ -116,32 +209,50 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
               </h3>
               <p className="text-xs text-cyan-400 font-mono mt-0.5">{user.handle}</p>
               <div className="flex items-center justify-center gap-2 mt-2">
-                <span className="px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-600/40 text-[10px] text-pink-300 font-mono">
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-900/60 border border-purple-600/40 text-[10px] text-pink-300 font-mono">
                   {user.statusText}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Picture-in-Picture Local Camera Preview (Alex) */}
-          <div className="absolute bottom-24 right-4 w-28 h-38 rounded-2xl overflow-hidden border-2 border-pink-500/60 shadow-[0_0_25px_rgba(236,72,153,0.4)] bg-[#120c29] z-20 group">
+          {/* Picture-in-Picture Local Camera Preview */}
+          <div className="absolute bottom-6 right-4 w-28 h-38 rounded-2xl overflow-hidden border-2 border-pink-500/60 shadow-[0_0_25px_rgba(236,72,153,0.4)] bg-[#120c29] z-20 group">
             {isVideoActive ? (
               <div className="relative w-full h-full bg-purple-950">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
-                  alt="You"
-                  referrerPolicy="no-referrer"
-                  className={`w-full h-full object-cover ${
-                    cyberFilter === 'neon'
-                      ? 'contrast-125 hue-rotate-15'
-                      : cyberFilter === 'synth'
-                      ? 'contrast-110 saturate-150'
-                      : 'brightness-110'
-                  }`}
-                />
-                <span className="absolute top-1.5 left-1.5 text-[9px] font-mono font-bold bg-black/60 px-1.5 py-0.5 rounded text-pink-300">
-                  YOU
-                </span>
+                {useRealCamera ? (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover mirror"
+                  />
+                ) : (
+                  <img
+                    src={
+                      currentUser?.avatar ||
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+                    }
+                    alt={currentUser?.name || 'You'}
+                    referrerPolicy="no-referrer"
+                    className={`w-full h-full object-cover ${
+                      cyberFilter === 'neon'
+                        ? 'contrast-125 hue-rotate-15'
+                        : cyberFilter === 'synth'
+                        ? 'contrast-110 saturate-150'
+                        : 'brightness-110'
+                    }`}
+                  />
+                )}
+                <button
+                  onClick={toggleRealCamera}
+                  className="absolute top-1.5 left-1.5 text-[9px] font-mono font-bold bg-black/70 hover:bg-pink-600 px-1.5 py-0.5 rounded text-pink-300 hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer"
+                  title="Toggle real camera feed"
+                >
+                  <Camera className="w-2.5 h-2.5" />
+                  {useRealCamera ? 'CAM ON' : 'YOU'}
+                </button>
               </div>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center bg-black/80 text-slate-400">
@@ -158,7 +269,7 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
           <button
             id="video-call-toggle-camera-btn"
             onClick={() => setIsVideoActive(!isVideoActive)}
-            className={`p-3.5 rounded-2xl border transition-all ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               !isVideoActive
                 ? 'bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                 : 'bg-purple-950/60 border-purple-700/50 text-white hover:bg-purple-900'
@@ -172,36 +283,24 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
           <button
             id="video-call-toggle-mic-btn"
             onClick={() => setIsMuted(!isMuted)}
-            className={`p-3.5 rounded-2xl border transition-all ${
+            className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
               isMuted
                 ? 'bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                 : 'bg-purple-950/60 border-purple-700/50 text-white hover:bg-purple-900'
             }`}
             title={isMuted ? 'Unmute' : 'Mute'}
           >
-            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-cyan-300" />}
+            {isMuted ? <MicOff className="w-5 h-5 text-rose-400" /> : <Mic className="w-5 h-5 text-cyan-300" />}
           </button>
 
-          {/* Switch Cyber Filter */}
+          {/* End Call Button */}
           <button
-            id="video-call-filter-btn"
-            onClick={cycleFilter}
-            className="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-700/50 text-pink-300 hover:text-white hover:bg-purple-900 transition-all flex items-center gap-1 text-xs font-mono"
-            title="Cycle Neon Filter"
-          >
-            <Sparkles className="w-4 h-4 text-pink-400" />
-            <span className="uppercase text-[10px] hidden sm:inline">{cyberFilter}</span>
-          </button>
-
-          {/* End Video Call */}
-          <button
-            id="video-call-end-btn"
+            id="video-call-hangup-btn"
             onClick={handleEndCall}
-            className="p-3.5 px-5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white shadow-[0_0_25px_rgba(225,29,72,0.6)] hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
-            title="End Video Call"
+            className="p-4 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-[0_0_25px_rgba(244,63,94,0.6)] hover:scale-110 active:scale-95 transition-all cursor-pointer"
+            title="End Video Link"
           >
-            <PhoneOff className="w-5 h-5" />
-            <span className="text-xs font-bold">End</span>
+            <PhoneOff className="w-6 h-6" />
           </button>
         </div>
       </div>
