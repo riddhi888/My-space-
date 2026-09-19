@@ -10,27 +10,79 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Tag,
+  Users,
+  Compass,
+  UserCheck,
 } from 'lucide-react';
-import { SocialPost } from '../types';
+import { SocialPost, SocialUser, Friend } from '../types';
+import { DiscoverPeopleView } from './DiscoverPeopleView';
+import { FriendsListView } from './FriendsListView';
 
 interface SocialViewProps {
   posts: SocialPost[];
+  socialUsers: SocialUser[];
+  friends: Friend[];
   onLikePost: (postId: string) => void;
   onAddComment: (postId: string, commentText: string) => void;
   onCreatePost: (newPost: Omit<SocialPost, 'id' | 'timestamp' | 'likes' | 'commentsCount' | 'sharesCount'>) => void;
+  onToggleFollow: (userId: string) => void;
+  onSelectUser: (user: SocialUser) => void;
+  onOpenNetworkList: (initialTab: 'followers' | 'following') => void;
+  onOpenChat: (user: SocialUser) => void;
+  onOpenChatWithFriend: (friend: Friend) => void;
+  onStartVoiceCall: (user: SocialUser) => void;
+  onStartVideoCall: (user: SocialUser) => void;
+  onPlayGame: (user: SocialUser) => void;
+  initialSubTab?: 'discover' | 'friends' | 'feed';
 }
 
 export const SocialView: React.FC<SocialViewProps> = ({
   posts,
+  socialUsers,
+  friends,
   onLikePost,
   onAddComment,
   onCreatePost,
+  onToggleFollow,
+  onSelectUser,
+  onOpenNetworkList,
+  onOpenChat,
+  onOpenChatWithFriend,
+  onStartVoiceCall,
+  onStartVideoCall,
+  onPlayGame,
+  initialSubTab = 'discover',
 }) => {
+  const [currentSubTab, setCurrentSubTab] = useState<'discover' | 'friends' | 'feed'>(initialSubTab);
   const [activeFilter, setActiveFilter] = useState<'All' | 'Instagram' | 'Facebook' | 'MySpace'>('All');
   const [newPostText, setNewPostText] = useState('');
   const [selectedSource, setSelectedSource] = useState<'MySpace' | 'Instagram' | 'Facebook'>('MySpace');
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState('');
+
+  // Helper to resolve a Friend into a SocialUser for modals
+  const resolveFriendAsSocialUser = (friend: Friend): SocialUser => {
+    const existing = socialUsers.find((u) => u.id === friend.id || u.handle === friend.handle);
+    if (existing) return existing;
+    return {
+      id: friend.id,
+      name: friend.name,
+      handle: friend.handle || `@${friend.name.toLowerCase().replace(/\s+/g, '_')}`,
+      avatar: friend.avatar,
+      coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+      bio: friend.statusText || 'MySpace Cyber Voyager. Music lover, arcade gamer & digital creator.',
+      isOnline: friend.isOnline,
+      statusText: friend.statusText || (friend.isOnline ? 'Active now' : 'Offline'),
+      isFollowing: true,
+      isFollower: true,
+      friendRequestStatus: 'friends',
+      followersCount: 2350,
+      followingCount: 340,
+      mutualFriendsCount: 10,
+      tags: ['#CyberFriend', '#NeonCircle', '#MySpace'],
+      badges: ['💜 Best Friend'],
+    };
+  };
 
   const filteredPosts = posts.filter(
     (p) => activeFilter === 'All' || p.source === activeFilter
@@ -86,31 +138,102 @@ export const SocialView: React.FC<SocialViewProps> = ({
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Header & Filter Tabs */}
-      <div className="px-4 pt-2 space-y-3">
-        <div>
-          <h2 className="font-display font-bold text-xl text-white">Social Feed</h2>
-          <p className="text-xs text-slate-400">Stream from Instagram, Facebook & MySpace</p>
-        </div>
+      {/* Top Section Mode Switcher: Discover People vs Friends List vs Social Feed */}
+      <div className="px-4 pt-2">
+        <div className="flex bg-[#120b29] p-1 rounded-2xl border border-purple-800/40 text-xs">
+          <button
+            id="social-subtab-discover-btn"
+            onClick={() => setCurrentSubTab('discover')}
+            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              currentSubTab === 'discover'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-pink-400" />
+            <span>Discover</span>
+          </button>
 
-        {/* Source Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-          {(['All', 'Instagram', 'Facebook', 'MySpace'] as const).map((tab) => (
-            <button
-              key={tab}
-              id={`social-filter-${tab.toLowerCase()}`}
-              onClick={() => setActiveFilter(tab)}
-              className={`px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === tab
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]'
-                  : 'bg-purple-950/40 text-slate-400 hover:text-white border border-purple-800/30'
-              }`}
-            >
-              {tab === 'All' ? '🌐 All Channels' : tab}
-            </button>
-          ))}
+          <button
+            id="social-subtab-friends-btn"
+            onClick={() => setCurrentSubTab('friends')}
+            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              currentSubTab === 'friends'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Friends ({friends.length})</span>
+          </button>
+
+          <button
+            id="social-subtab-feed-btn"
+            onClick={() => setCurrentSubTab('feed')}
+            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              currentSubTab === 'feed'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Feed</span>
+          </button>
         </div>
       </div>
+
+      {currentSubTab === 'discover' && (
+        <DiscoverPeopleView
+          users={socialUsers}
+          onToggleFollow={onToggleFollow}
+          onSelectUser={onSelectUser}
+          onOpenNetworkList={onOpenNetworkList}
+          onOpenChat={onOpenChat}
+          onStartVoiceCall={onStartVoiceCall}
+          onStartVideoCall={onStartVideoCall}
+          onPlayGame={onPlayGame}
+        />
+      )}
+
+      {currentSubTab === 'friends' && (
+        <FriendsListView
+          friends={friends}
+          onOpenChat={onOpenChatWithFriend}
+          onStartVoiceCall={(friend) => onStartVoiceCall(resolveFriendAsSocialUser(friend))}
+          onStartVideoCall={(friend) => onStartVideoCall(resolveFriendAsSocialUser(friend))}
+          onPlayGame={(friend) => onPlayGame(resolveFriendAsSocialUser(friend))}
+          onOpenProfile={(friend) => onSelectUser(resolveFriendAsSocialUser(friend))}
+          onDiscoverMore={() => setCurrentSubTab('discover')}
+        />
+      )}
+
+      {currentSubTab === 'feed' && (
+        <>
+          {/* Header & Filter Tabs */}
+          <div className="px-4 space-y-3">
+            <div>
+              <h2 className="font-display font-bold text-xl text-white">Social Feed</h2>
+              <p className="text-xs text-slate-400">Stream from Instagram, Facebook & MySpace</p>
+            </div>
+
+            {/* Source Filter Tabs */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+              {(['All', 'Instagram', 'Facebook', 'MySpace'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  id={`social-filter-${tab.toLowerCase()}`}
+                  onClick={() => setActiveFilter(tab)}
+                  className={`px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    activeFilter === tab
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]'
+                      : 'bg-purple-950/40 text-slate-400 hover:text-white border border-purple-800/30'
+                  }`}
+                >
+                  {tab === 'All' ? '🌐 All Channels' : tab}
+                </button>
+              ))}
+            </div>
+          </div>
 
       {/* Post Composer Card */}
       <div className="px-4">
@@ -339,6 +462,8 @@ export const SocialView: React.FC<SocialViewProps> = ({
           );
         })}
       </div>
+      </>
+      )}
     </div>
   );
 };

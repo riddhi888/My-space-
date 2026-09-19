@@ -1,252 +1,273 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Gamepad2,
   Trophy,
-  Play,
-  RotateCcw,
   Sparkles,
   Zap,
   Flame,
   Users,
   Star,
+  Play,
+  Brain,
+  Hash,
+  Swords,
+  ChevronRight,
   Award,
 } from 'lucide-react';
 import { GameItem } from '../types';
+import { TicTacToeGame } from './games/TicTacToeGame';
+import { RockPaperScissorsGame } from './games/RockPaperScissorsGame';
+import { MemoryMatchGame } from './games/MemoryMatchGame';
+import { NumberGuessingGame } from './games/NumberGuessingGame';
 
 interface GamesViewProps {
   games: GameItem[];
 }
 
-export const GamesView: React.FC<GamesViewProps> = ({ games }) => {
-  const [activeGame, setActiveGame] = useState<GameItem | null>(null);
+type ActiveGameKey = 'tictactoe' | 'rps' | 'memory' | 'numberguess';
 
-  // MINI GAME: Cyber Reflex Tap State
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
-  const [gameActive, setGameActive] = useState(false);
-  const [activeTargetIndex, setActiveTargetIndex] = useState<number | null>(null);
-  const [combo, setCombo] = useState(1);
-  const [highScore, setHighScore] = useState(2450);
+interface GameCardMeta {
+  key: ActiveGameKey;
+  title: string;
+  category: string;
+  badge: string;
+  description: string;
+  icon: React.FC<{ className?: string }>;
+  rating: number;
+  playersOnline: number;
+  thumbnail: string;
+  accentColor: string;
+  borderHover: string;
+}
 
-  // Reflex tap target spawner
-  useEffect(() => {
-    let interval: any;
-    if (gameActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        const randomIndex = Math.floor(Math.random() * 9);
-        setActiveTargetIndex(randomIndex);
-      }, 750);
+const gameCardsList: GameCardMeta[] = [
+  {
+    key: 'tictactoe',
+    title: 'Tic-Tac-Toe',
+    category: 'Strategy & Duals',
+    badge: '3x3 Neon Grid',
+    description: 'Connect three neon marks in a row vs Cyber AI or a friend with Pass & Play.',
+    icon: Sparkles,
+    rating: 4.9,
+    playersOnline: 2450,
+    thumbnail: 'https://images.unsplash.com/photo-1611996575749-79a3a250f948?auto=format&fit=crop&w=600&q=80',
+    accentColor: 'from-pink-500 to-purple-600',
+    borderHover: 'hover:border-pink-500',
+  },
+  {
+    key: 'rps',
+    title: 'Rock Paper Scissors',
+    category: 'Hand Battle Vs AI',
+    badge: 'Streak Multiplier',
+    description: 'Duel the Cyber Bot with Rock, Paper, or Scissors and rack up win streaks.',
+    icon: Swords,
+    rating: 4.8,
+    playersOnline: 1890,
+    thumbnail: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=600&q=80',
+    accentColor: 'from-cyan-500 to-blue-600',
+    borderHover: 'hover:border-cyan-500',
+  },
+  {
+    key: 'memory',
+    title: 'Memory Match',
+    category: 'Brain & Cyber Cards',
+    badge: '12 Cyber Tiles',
+    description: 'Flip holographic cards to pair up cyber symbols in fewest moves & time.',
+    icon: Brain,
+    rating: 4.9,
+    playersOnline: 3120,
+    thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+    accentColor: 'from-purple-500 to-pink-500',
+    borderHover: 'hover:border-purple-400',
+  },
+  {
+    key: 'numberguess',
+    title: 'Number Guessing',
+    category: 'Quantum Logic Code',
+    badge: '1 - 100 Range',
+    description: 'Crack the secret frequency code using dynamic higher/lower signal feedback.',
+    icon: Hash,
+    rating: 4.7,
+    playersOnline: 1420,
+    thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80',
+    accentColor: 'from-amber-500 to-rose-600',
+    borderHover: 'hover:border-amber-400',
+  },
+];
+
+export const GamesView: React.FC<GamesViewProps> = () => {
+  const [activeGameKey, setActiveGameKey] = useState<ActiveGameKey>('tictactoe');
+
+  const scrollToArena = () => {
+    const arenaElement = document.getElementById('active-game-arena');
+    if (arenaElement) {
+      arenaElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    return () => clearInterval(interval);
-  }, [gameActive, timeLeft]);
-
-  // Countdown timer
-  useEffect(() => {
-    let timer: any;
-    if (gameActive && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && gameActive) {
-      setGameActive(false);
-      setActiveTargetIndex(null);
-      if (score > highScore) {
-        setHighScore(score);
-      }
-    }
-    return () => clearInterval(timer);
-  }, [gameActive, timeLeft, score, highScore]);
-
-  const startReflexGame = () => {
-    setScore(0);
-    setTimeLeft(15);
-    setCombo(1);
-    setGameActive(true);
-    setActiveTargetIndex(Math.floor(Math.random() * 9));
   };
 
-  const handleTargetClick = (index: number) => {
-    if (!gameActive) return;
-    if (index === activeTargetIndex) {
-      const addedScore = 100 * combo;
-      setScore((prev) => prev + addedScore);
-      setCombo((prev) => Math.min(prev + 1, 5));
-      // spawn next immediately
-      const nextIndex = Math.floor(Math.random() * 9);
-      setActiveTargetIndex(nextIndex);
-    } else {
-      setCombo(1);
-    }
+  const handleSelectGame = (key: ActiveGameKey) => {
+    setActiveGameKey(key);
+    scrollToArena();
   };
 
   const leaderboard = [
-    { rank: 1, name: 'Marcus Vance', score: 2840, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', badge: '🥇 Cyber King' },
-    { rank: 2, name: 'Elena Rostova', score: 2610, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', badge: '🥈 Glitch Queen' },
-    { rank: 3, name: 'Alex Rivera (You)', score: highScore, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', badge: '🥉 Neon Master' },
-    { rank: 4, name: 'Kai Takahashi', score: 2120, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', badge: '🎮 Arcade Hacker' },
+    { rank: 1, name: 'Marcus Vance', score: 3450, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', badge: '🥇 Cyber King' },
+    { rank: 2, name: 'Elena Rostova', score: 2980, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', badge: '🥈 Glitch Queen' },
+    { rank: 3, name: 'Alex Rivera (You)', score: 2840, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', badge: '🥉 Neon Master' },
+    { rank: 4, name: 'Kai Takahashi', score: 2620, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', badge: '🎮 Arcade Hacker' },
   ];
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-28">
       {/* Arcade Header */}
       <div className="px-4 pt-2 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
               <span>MySpace Arcade</span>
-              <Sparkles className="w-4 h-4 text-pink-400" />
+              <Sparkles className="w-4 h-4 text-pink-400 animate-pulse" />
             </h2>
             <p className="text-xs text-slate-400">Play instant cyber mini-games & earn neon trophies</p>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-purple-950/60 border border-purple-800/40 text-xs font-mono text-cyan-300">
-            <Zap className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-            <span>1,450 TOKENS</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-purple-950/60 border border-purple-800/40 text-xs font-mono text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+            <Zap className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 animate-bounce" />
+            <span>2,150 TOKENS</span>
           </div>
         </div>
 
-        {/* Featured Mini-Game Canvas Player Card */}
-        <div className="p-4 rounded-3xl bg-gradient-to-br from-[#1b1038] via-[#120b26] to-[#090714] border border-pink-500/40 shadow-[0_0_30px_rgba(236,72,153,0.2)]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/50 flex items-center justify-center text-pink-400">
-                <Gamepad2 className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-white">Cyber Reflex Tap</h3>
-                <p className="text-[11px] text-pink-400">15-sec Speed Reaction Blitz</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-cyan-300 bg-cyan-950/50 px-2 py-0.5 rounded-lg border border-cyan-800/40">
-                HIGH: {highScore}
-              </span>
-            </div>
-          </div>
-
-          {/* Interactive Play Arena (3x3 Neon Grid) */}
-          <div className="relative aspect-square max-w-[280px] mx-auto bg-[#0a0618] rounded-2xl border border-purple-800/40 p-3 flex flex-col justify-between overflow-hidden shadow-inner">
-            {/* Status bar */}
-            <div className="flex items-center justify-between text-xs font-mono px-1">
-              <span className="text-pink-400 font-bold">SCORE: {score}</span>
-              <span className="text-yellow-400 font-bold">x{combo} COMBO</span>
-              <span className={`font-bold ${timeLeft <= 3 ? 'text-red-400 animate-ping' : 'text-cyan-400'}`}>
-                {timeLeft}s
-              </span>
-            </div>
-
-            {/* Target Matrix Grid */}
-            <div className="grid grid-cols-3 gap-2.5 p-1 my-auto">
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => {
-                const isActive = activeTargetIndex === index && gameActive;
-                return (
-                  <button
-                    key={index}
-                    id={`reflex-target-${index}`}
-                    onClick={() => handleTargetClick(index)}
-                    disabled={!gameActive}
-                    className={`aspect-square rounded-xl transition-all duration-150 flex items-center justify-center ${
-                      isActive
-                        ? 'bg-gradient-to-tr from-pink-500 via-rose-500 to-amber-400 shadow-[0_0_20px_rgba(236,72,153,0.9)] scale-105 border-2 border-white cursor-pointer'
-                        : 'bg-purple-950/30 border border-purple-900/30 hover:border-purple-700/50'
-                    }`}
-                  >
-                    {isActive ? (
-                      <Flame className="w-6 h-6 text-white animate-bounce" />
-                    ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-purple-900/40" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Game Start/Finish Overlay */}
-            {!gameActive && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center z-10">
-                {timeLeft === 0 ? (
-                  <div className="space-y-2">
-                    <Trophy className="w-10 h-10 text-yellow-400 mx-auto animate-bounce" />
-                    <h4 className="font-display font-bold text-lg text-white">Time's Up!</h4>
-                    <p className="text-xs text-pink-300 font-mono">You scored {score} points!</p>
-                    <button
-                      id="restart-reflex-btn"
-                      onClick={startReflexGame}
-                      className="mt-2 px-5 py-2 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold shadow-[0_0_15px_rgba(236,72,153,0.6)] flex items-center gap-1.5 mx-auto"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Play Again
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Zap className="w-10 h-10 text-pink-400 mx-auto" />
-                    <h4 className="font-display font-bold text-base text-white">Cyber Reflex Tap</h4>
-                    <p className="text-[11px] text-slate-300">Tap the glowing neon pods as fast as you can in 15 seconds!</p>
-                    <button
-                      id="start-reflex-btn"
-                      onClick={startReflexGame}
-                      className="mt-2 px-6 py-2 rounded-2xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-xs font-bold shadow-[0_0_20px_rgba(236,72,153,0.6)] flex items-center gap-1.5 mx-auto hover:scale-105 transition-transform"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-white" /> Start Blitz
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        {/* Game Selector Tab Pills */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+          {gameCardsList.map((g) => {
+            const isSelected = activeGameKey === g.key;
+            return (
+              <button
+                key={g.key}
+                id={`game-tab-${g.key}`}
+                onClick={() => handleSelectGame(g.key)}
+                className={`px-3 py-1.5 rounded-2xl font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)] scale-105 border border-pink-400'
+                    : 'bg-purple-950/50 text-slate-400 hover:text-white border border-purple-900/40 hover:border-purple-700'
+                }`}
+              >
+                <span>{g.title}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Arcade Catalog */}
+      {/* Active Playable Game Arena */}
+      <div id="active-game-arena" className="px-4">
+        {activeGameKey === 'tictactoe' && <TicTacToeGame />}
+        {activeGameKey === 'rps' && <RockPaperScissorsGame />}
+        {activeGameKey === 'memory' && <MemoryMatchGame />}
+        {activeGameKey === 'numberguess' && <NumberGuessingGame />}
+      </div>
+
+      {/* Attractive Game Cards Section */}
       <div className="px-4 space-y-3">
-        <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
-          <span>Popular Arcade Games</span>
-          <Flame className="w-4 h-4 text-orange-400" />
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
+            <Gamepad2 className="w-4 h-4 text-pink-400" />
+            <span>Featured Cyber Games</span>
+          </h3>
+          <span className="text-[11px] font-mono text-cyan-400">4 PLAYABLE</span>
+        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {games.map((game) => (
-            <div
-              key={game.id}
-              onClick={() => {
-                if (game.isMiniGamePlayable) {
-                  startReflexGame();
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                  alert(`Loading ${game.title}... Multiplayer lobby is scheduled for next release!`);
-                }
-              }}
-              className="p-3 rounded-2xl bg-[#130d2a] border border-purple-800/40 hover:border-pink-500/50 transition-all cursor-pointer group shadow-lg hover:shadow-[0_0_20px_rgba(236,72,153,0.2)] flex flex-col justify-between"
-            >
-              <div>
-                <div className="relative aspect-video rounded-xl overflow-hidden mb-2.5">
-                  <img
-                    src={game.thumbnail}
-                    alt={game.title}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-mono text-cyan-300 flex items-center gap-0.5">
-                    <Star className="w-2.5 h-2.5 fill-cyan-400 text-cyan-400" /> {game.rating}
-                  </span>
+        {/* 4 Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {gameCardsList.map((card) => {
+            const isCurrentlyPlaying = activeGameKey === card.key;
+            const Icon = card.icon;
+
+            return (
+              <div
+                key={card.key}
+                id={`game-card-${card.key}`}
+                onClick={() => handleSelectGame(card.key)}
+                className={`p-3.5 rounded-3xl bg-[#120b28] border transition-all duration-300 cursor-pointer flex flex-col justify-between group shadow-lg ${
+                  isCurrentlyPlaying
+                    ? 'border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.35)] ring-1 ring-pink-500/50'
+                    : 'border-purple-800/40 hover:border-pink-500/50 hover:shadow-[0_0_20px_rgba(236,72,153,0.2)]'
+                }`}
+              >
+                <div>
+                  {/* Card Media Header */}
+                  <div className="relative aspect-video rounded-2xl overflow-hidden mb-3">
+                    <img
+                      src={card.thumbnail}
+                      alt={card.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Top badging */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-mono font-bold text-pink-300 border border-pink-500/40">
+                        {card.badge}
+                      </span>
+                    </div>
+
+                    {/* Top right rating */}
+                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-lg bg-black/80 backdrop-blur-xs text-[10px] font-mono text-amber-300 flex items-center gap-1 border border-amber-500/30">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span>{card.rating}</span>
+                    </div>
+
+                    {/* Bottom Title Overlay */}
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-xl bg-pink-500/30 backdrop-blur-xs border border-pink-400 flex items-center justify-center text-pink-300">
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <h4 className="font-display font-bold text-sm text-white drop-shadow-md">
+                          {card.title}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description & Category */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-cyan-400 font-semibold">{card.category}</span>
+                      <span className="flex items-center gap-1 text-slate-400 font-mono text-[10px]">
+                        <Users className="w-3 h-3 text-emerald-400" />
+                        <span>{card.playersOnline.toLocaleString()} online</span>
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                      {card.description}
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-semibold text-xs text-white group-hover:text-pink-300 transition-colors line-clamp-1">
-                  {game.title}
-                </h4>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {game.category}
-                </p>
-              </div>
 
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-purple-900/30 text-[10px] text-slate-400">
-                <span className="flex items-center gap-1 font-mono">
-                  <Users className="w-3 h-3 text-emerald-400" /> {game.playersOnline}
-                </span>
-                <span className="text-pink-400 font-semibold group-hover:underline">
-                  {game.isMiniGamePlayable ? 'Play Now →' : 'Lobby →'}
-                </span>
+                {/* Bottom CTA Action Button */}
+                <div className="mt-3 pt-2.5 border-t border-purple-900/30 flex items-center justify-between">
+                  <span className="text-[11px] text-pink-300 font-medium">
+                    Instructions & Restart included
+                  </span>
+                  <button
+                    id={`play-game-btn-${card.key}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectGame(card.key);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isCurrentlyPlaying
+                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.5)]'
+                        : 'bg-purple-900/50 hover:bg-pink-600 text-white border border-purple-700/50'
+                    }`}
+                  >
+                    <Play className="w-3 h-3 fill-white" />
+                    <span>{isCurrentlyPlaying ? 'Playing' : 'Play Now'}</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -254,7 +275,7 @@ export const GamesView: React.FC<GamesViewProps> = ({ games }) => {
       <div className="px-4 space-y-2.5">
         <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
           <Trophy className="w-4 h-4 text-yellow-400" />
-          <span>Friends Leaderboard</span>
+          <span>Friends Arcade Leaderboard</span>
         </h3>
 
         <div className="rounded-2xl bg-[#110c26] border border-purple-800/40 p-2 space-y-1.5">

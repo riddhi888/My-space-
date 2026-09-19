@@ -1,22 +1,32 @@
-import React, { useState } from 'react';
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, Flame } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, Flame, ArrowLeft } from 'lucide-react';
 import { Reel } from '../types';
 
 interface ReelsModalProps {
   isOpen: boolean;
   onClose: () => void;
   reels: Reel[];
+  initialReelIndex?: number;
+  onShareReel?: (reel: Reel) => void;
 }
 
 export const ReelsModal: React.FC<ReelsModalProps> = ({
   isOpen,
   onClose,
   reels,
+  initialReelIndex = 0,
+  onShareReel,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialReelIndex);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [isMuted, setIsMuted] = useState(false);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && typeof initialReelIndex === 'number' && initialReelIndex >= 0) {
+      setCurrentIndex(initialReelIndex % (reels.length || 1));
+    }
+  }, [isOpen, initialReelIndex, reels.length]);
 
   if (!isOpen || reels.length === 0) return null;
 
@@ -40,6 +50,14 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + reels.length) % reels.length);
+  };
+
+  const handleShareClick = () => {
+    if (onShareReel) {
+      onShareReel(currentReel);
+    } else {
+      alert(`Copied reel link: https://myspace.app/reels/${currentReel.id}`);
+    }
   };
 
   return (
@@ -148,7 +166,7 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
 
           <button
             id="reel-share-btn"
-            onClick={() => alert('Reel link copied to clipboard!')}
+            onClick={handleShareClick}
             className="flex flex-col items-center gap-1 group"
           >
             <div className="p-3 rounded-full bg-black/40 backdrop-blur-md text-white group-hover:bg-black/60 transition-all">

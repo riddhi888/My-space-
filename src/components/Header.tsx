@@ -7,13 +7,18 @@ interface HeaderProps {
   onSelectTab: (tab: TabType) => void;
   unreadNotificationsCount: number;
   onOpenNotifications: () => void;
-  onOpenSearch: () => void;
+  onOpenSearch?: () => void;
+  onOpenReels?: () => void;
+  onOpenShare?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  currentTab,
   onSelectTab,
   unreadNotificationsCount,
   onOpenNotifications,
+  onOpenReels,
+  onOpenShare,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full px-4 py-3 bg-[#090714]/85 backdrop-blur-md border-b border-purple-900/30">
@@ -25,8 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-2 group text-left focus:outline-none"
         >
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-blue-500 flex items-center justify-center p-0.5 shadow-lg shadow-pink-500/25 group-hover:shadow-pink-500/50 transition-all">
-            <div className="w-full h-full bg-[#0d0a1a] rounded-[10px] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-pink-400 group-hover:rotate-12 transition-transform" />
+            <div className="w-full h-full bg-[#0d0a1a] rounded-[10px] flex items-center justify-center font-bold text-white text-xs">
+              M
             </div>
           </div>
           <div>
@@ -43,6 +48,44 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Quick Music Button */}
+          <button
+            id="header-music-btn"
+            onClick={() => onSelectTab('music')}
+            className={`w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition-all hover:scale-105 ${
+              currentTab === 'music'
+                ? 'bg-pink-500/20 border-pink-500 text-pink-400 shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'bg-purple-950/40 border-purple-800/40 hover:border-pink-500/50 hover:bg-purple-900/40 text-pink-300'
+            }`}
+            title="Cyber Beats Music Player 🎵"
+          >
+            🎵
+          </button>
+
+          {/* Quick Reels Button */}
+          {onOpenReels && (
+            <button
+              id="header-reels-btn"
+              onClick={onOpenReels}
+              className="w-9 h-9 rounded-xl bg-purple-950/40 border border-purple-800/40 hover:border-pink-500/50 hover:bg-purple-900/40 flex items-center justify-center text-sm hover:scale-105 transition-all"
+              title="Watch Reels 🎞️"
+            >
+              🎞️
+            </button>
+          )}
+
+          {/* Quick Share Link Button */}
+          {onOpenShare && (
+            <button
+              id="header-share-btn"
+              onClick={onOpenShare}
+              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 flex items-center justify-center text-xs text-white shadow-md shadow-pink-500/30 hover:scale-105 transition-all"
+              title="Share Link 📲"
+            >
+              📲
+            </button>
+          )}
+
           {/* Notifications Button */}
           <button
             id="notifications-toggle-btn"

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, MessageSquare, Compass, Gamepad2, User } from 'lucide-react';
+import { Home, MessageSquare, Compass, Gamepad2, User, Music } from 'lucide-react';
 import { TabType } from '../types';
 
 interface BottomNavProps {
@@ -15,6 +15,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   const tabs: { id: TabType; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'home', label: 'Home', icon: Home },
+    { id: 'music', label: 'Music', icon: Music },
     { id: 'chat', label: 'Chat', icon: MessageSquare },
     { id: 'social', label: 'Social', icon: Compass },
     { id: 'games', label: 'Games', icon: Gamepad2 },
@@ -33,7 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               key={tab.id}
               id={`nav-tab-${tab.id}`}
               onClick={() => onSelectTab(tab.id)}
-              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-300 ${
+              className={`relative flex flex-col items-center justify-center py-1 px-2 sm:px-3 rounded-2xl transition-all duration-300 ${
                 isActive
                   ? 'text-pink-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
