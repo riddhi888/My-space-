@@ -66,22 +66,27 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="quick-profile-btn"
             onClick={() => onSelectTab('profile')}
-            className={`relative w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer shrink-0 ${
+            className={`relative w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer shrink-0 flex items-center justify-center ${
               currentTab === 'profile'
                 ? 'border-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.5)]'
                 : 'border-purple-700/60 hover:border-pink-500'
             }`}
-            title={`Profile: ${currentUser?.name || 'Alex'}`}
+            title={`Profile: ${currentUser?.name || 'Your Profile'}`}
           >
-            <img
-              src={
-                currentUser?.avatar ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-              }
-              alt={currentUser?.name || 'Profile'}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
-            />
+            {currentUser?.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name || 'Profile'}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-purple-950/80 flex items-center justify-center text-pink-400">
+                <span className="text-[10px] font-bold font-mono">
+                  {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                </span>
+              </div>
+            )}
           </button>
         </div>
       </div>

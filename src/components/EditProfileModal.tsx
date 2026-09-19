@@ -97,16 +97,14 @@ const COVER_PRESETS = [
 ];
 
 // Default fallback avatar and cover when removed
-const DEFAULT_FALLBACK_AVATAR =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80';
+const DEFAULT_FALLBACK_AVATAR = '';
 const DEFAULT_FALLBACK_COVER = '';
 
 const BIO_SUGGESTIONS = [
-  '⚡ Neon nomad & synthesizer addict.',
-  '🌌 Creating the next wave of cyberspace.',
-  '🕹️ Arcade champion & retro gaming purist.',
-  '🎧 Living for 80s tape warmth and analog synths.',
-  '✨ Connecting worlds on the new MySpace.',
+  '⚡ Retro cyberspace explorer.',
+  '🌌 Creating on the new MySpace 2008.',
+  '🕹️ Arcade enthusiast & 2008 web lover.',
+  '🎧 Coding beats and synthwave vibes.',
 ];
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
@@ -116,11 +114,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   initialTab,
   onSave,
 }) => {
-  const [name, setName] = useState(user.name);
-  const [handle, setHandle] = useState(user.handle.startsWith('@') ? user.handle : `@${user.handle}`);
-  const [bio, setBio] = useState(user.bio);
-  const [avatar, setAvatar] = useState(user.avatar);
-  const [coverImage, setCoverImage] = useState(user.coverImage);
+  const [name, setName] = useState(user.name || '');
+  const [handle, setHandle] = useState(
+    user.handle ? (user.handle.startsWith('@') ? user.handle : `@${user.handle}`) : ''
+  );
+  const [bio, setBio] = useState(user.bio || '');
+  const [avatar, setAvatar] = useState(user.avatar || '');
+  const [coverImage, setCoverImage] = useState(user.coverImage || '');
   const [socialLinks, setSocialLinks] = useState<UserSocialLinks>(() =>
     loadSocialLinksFromStorage(user.id, user.socialLinks)
   );
@@ -135,11 +135,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setName(user.name);
-      setHandle(user.handle.startsWith('@') ? user.handle : `@${user.handle}`);
-      setBio(user.bio);
-      setAvatar(user.avatar);
-      setCoverImage(user.coverImage);
+      setName(user.name || '');
+      setHandle(
+        user.handle ? (user.handle.startsWith('@') ? user.handle : `@${user.handle}`) : ''
+      );
+      setBio(user.bio || '');
+      setAvatar(user.avatar || '');
+      setCoverImage(user.coverImage || '');
       setSocialLinks(loadSocialLinksFromStorage(user.id, user.socialLinks));
       if (initialTab) {
         setActiveTab(initialTab);
@@ -258,12 +260,28 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
     saveSocialLinksToStorage(user.id, socialLinks);
 
-    // 2. Pass complete profile and socialLinks upward to accountService
+    // 2. Save complete user profile to localStorage 'myspace_user'
+    const updatedUserObj: UserProfile = {
+      ...user,
+      name: name.trim(),
+      handle: cleanHandle,
+      bio: bio.trim(),
+      avatar: avatar.trim(),
+      coverImage: coverImage.trim(),
+      socialLinks,
+    };
+    try {
+      localStorage.setItem('myspace_user', JSON.stringify(updatedUserObj));
+    } catch (err) {
+      console.warn('Failed to save myspace_user', err);
+    }
+
+    // 3. Pass complete profile and socialLinks upward to parent
     onSave({
       name: name.trim(),
       handle: cleanHandle,
       bio: bio.trim(),
-      avatar: avatar.trim() || DEFAULT_FALLBACK_AVATAR,
+      avatar: avatar.trim(),
       coverImage: coverImage.trim(),
       socialLinks,
     });

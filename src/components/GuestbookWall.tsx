@@ -9,32 +9,7 @@ interface GuestbookWallProps {
 
 const STICKER_OPTIONS = ['💖', '⚡', '💀', '🎸', '🛹', '👾', '✨', '🔥', '💿', '🖤', '🎀', '🦇', '⭐', '🌈'];
 
-const DEFAULT_GUESTBOOK_ENTRIES: GuestbookEntry[] = [
-  {
-    id: 'gb_seed_1',
-    authorName: 'Tom (MySpace Creator)',
-    message: 'Welcome to MySpace! Thanks for being my friend. Don\'t forget to customize your profile code! :-)',
-    sticker: '⭐',
-    timestamp: '2008-04-12 14:22',
-    likes: 42,
-  },
-  {
-    id: 'gb_seed_2',
-    authorName: 'xX_scene_queen_Xx',
-    message: 'thx 4 the add!! rawr XD your profile song is so epic!! lets hang at the mall this friday 🎸',
-    sticker: '💀',
-    timestamp: 'Yesterday at 8:45 PM',
-    likes: 19,
-  },
-  {
-    id: 'gb_seed_3',
-    authorName: 'Sk8erBoi99',
-    message: 'PC4PC?? (pic for pic) left 5 stars on your photos, leave some love on my wall too!! 🛹',
-    sticker: '🛹',
-    timestamp: '2 hours ago',
-    likes: 8,
-  },
-];
+const DEFAULT_GUESTBOOK_ENTRIES: GuestbookEntry[] = [];
 
 export const GuestbookWall: React.FC<GuestbookWallProps> = ({ userId, userName }) => {
   const storageKey = `myspace_guestbook_${userId || 'default'}`;

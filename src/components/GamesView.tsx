@@ -110,12 +110,7 @@ export const GamesView: React.FC<GamesViewProps> = () => {
     scrollToArena();
   };
 
-  const leaderboard = [
-    { rank: 1, name: 'Marcus Vance', score: 3450, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', badge: '🥇 Cyber King' },
-    { rank: 2, name: 'Elena Rostova', score: 2980, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', badge: '🥈 Glitch Queen' },
-    { rank: 3, name: 'Alex Rivera (You)', score: 2840, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', badge: '🥉 Neon Master' },
-    { rank: 4, name: 'Kai Takahashi', score: 2620, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', badge: '🎮 Arcade Hacker' },
-  ];
+
 
   return (
     <div className="space-y-6 pb-28">
@@ -271,50 +266,7 @@ export const GamesView: React.FC<GamesViewProps> = () => {
         </div>
       </div>
 
-      {/* Arcade Leaderboard */}
-      <div className="px-4 space-y-2.5">
-        <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-yellow-400" />
-          <span>Friends Arcade Leaderboard</span>
-        </h3>
 
-        <div className="rounded-2xl bg-[#110c26] border border-purple-800/40 p-2 space-y-1.5">
-          {leaderboard.map((item) => (
-            <div
-              key={item.rank}
-              className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
-                item.rank === 3
-                  ? 'bg-purple-900/40 border border-pink-500/40'
-                  : 'hover:bg-purple-950/40'
-              }`}
-            >
-              <span className={`w-5 font-mono text-xs font-bold text-center ${
-                item.rank === 1 ? 'text-yellow-400' : item.rank === 2 ? 'text-slate-300' : 'text-pink-400'
-              }`}>
-                #{item.rank}
-              </span>
-
-              <img
-                src={item.avatar}
-                alt={item.name}
-                referrerPolicy="no-referrer"
-                className="w-8 h-8 rounded-full object-cover border border-purple-500/40"
-              />
-
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-semibold text-white truncate">
-                  {item.name}
-                </h4>
-                <p className="text-[10px] text-slate-400">{item.badge}</p>
-              </div>
-
-              <span className="font-mono text-xs font-bold text-cyan-300">
-                {item.score.toLocaleString()} pts
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

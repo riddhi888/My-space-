@@ -50,6 +50,65 @@ import { NotificationsView } from './components/NotificationsView';
 import { SettingsView } from './components/SettingsView';
 import { ConnectedAppsView } from './components/ConnectedAppsView';
 import { LoginScreen } from './components/LoginScreen';
+import { EditProfileModal } from './components/EditProfileModal';
+
+const getInitialProfile = (): UserProfile => {
+  try {
+    const raw = localStorage.getItem('myspace_user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.name && parsed.name.trim() && parsed.name !== 'Alex Rivera') {
+        const rawSocial = localStorage.getItem('socialLinks');
+        const socialLinks = rawSocial ? JSON.parse(rawSocial) : parsed.socialLinks || {};
+        return {
+          ...parsed,
+          socialLinks,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to parse myspace_user', err);
+  }
+
+  // Clear any legacy demo data from localStorage
+  try {
+    const legacy = localStorage.getItem('myspace_user');
+    if (legacy && legacy.includes('Alex Rivera')) {
+      localStorage.removeItem('myspace_user');
+    }
+  } catch {}
+
+  return {
+    id: 'user_local',
+    name: '',
+    handle: '',
+    avatar: '',
+    coverImage: '',
+    bio: '',
+    isOnline: true,
+    badges: [],
+    profileSong: {
+      title: '',
+      artist: '',
+      album: '',
+      cover: '',
+      isAutoplay: false,
+    },
+    top8Friends: [],
+    stats: {
+      profileViews: 0,
+      friends: 0,
+      posts: 0,
+      followers: 0,
+    },
+    socialLinks: {
+      facebook: '',
+      youtube: '',
+      instagram: '',
+      spotify: '',
+    },
+  };
+};
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('home');
@@ -60,8 +119,9 @@ export default function App() {
   });
   const [isLoggedOut, setIsLoggedOut] = useState(false);
 
-  // User-isolated state
-  const [user, setUser] = useState<UserProfile>(() => activeAccount.profile);
+  // User-isolated state (starts empty from localStorage 'myspace_user')
+  const [user, setUser] = useState<UserProfile>(getInitialProfile);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [friends, setFriends] = useState(initialFriends);
   const [socialUsers, setSocialUsers] = useState<SocialUser[]>(mockSocialUsers);
   const [chatThreads, setChatThreads] = useState(() =>
@@ -696,6 +756,11 @@ export default function App() {
       coverImage: updated.coverImage,
       socialLinks: currentSocial,
     };
+    try {
+      localStorage.setItem('myspace_user', JSON.stringify(updatedProfile));
+    } catch (e) {
+      console.warn('Failed to save myspace_user', e);
+    }
     setUser(updatedProfile);
 
     const updatedAccount: UserAccount = {
@@ -812,15 +877,7 @@ export default function App() {
                 setActiveChatId(null);
                 setCurrentTab(tab);
               }}
-              onlineFriends={friends}
-              reels={reels}
-              tracks={mockTracks}
-              sharedLinks={sharedLinks}
-              onOpenReels={handleOpenReels}
-              onOpenStory={(friend) => setSelectedStoryFriend(friend)}
-              onOpenChatThread={handleOpenChatThread}
-              onOpenShareLink={handleOpenShareLink}
-              onLikeSharedLink={handleLikeSharedLink}
+              onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
             />
           )}
 
@@ -928,12 +985,6 @@ export default function App() {
           )}
         </main>
 
-        {/* Persistent Mini Music Player (visible on all screens when not on music tab) */}
-        <MiniMusicPlayer
-          onOpenFullPlayer={() => setCurrentTab('music')}
-          isVisible={currentTab !== 'music'}
-        />
-
         {/* Bottom Navigation */}
         <BottomNav
           currentTab={currentTab}
@@ -942,6 +993,14 @@ export default function App() {
             setCurrentTab(tab);
           }}
           unreadChatCount={unreadChatCount}
+        />
+
+        {/* Global Edit Profile Modal (for onboarding from Home) */}
+        <EditProfileModal
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          user={user}
+          onSave={handleUpdateFullProfile}
         />
 
         {/* Modals */}
