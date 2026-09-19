@@ -14,7 +14,8 @@ import {
   Film,
   Link as LinkIcon,
 } from 'lucide-react';
-import { Friend, Reel, MusicTrack, TabType, SharedLink, UserProfile } from '../types';
+import { Friend, Reel, MusicTrack, TabType, SharedLink, UserProfile, ProfileMoodType } from '../types';
+import { MOOD_OPTIONS } from './ProfileView';
 
 interface HomeViewProps {
   currentUser?: UserProfile;
@@ -44,12 +45,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // 2 tabs side by side: Shared Links and Trending Reels
   const [activeHomeTab, setActiveHomeTab] = useState<'links' | 'reels'>('links');
 
+  // Load mood from localStorage
+  const moodStorageKey = `myspace_user_mood_${currentUser?.id || 'default'}`;
+  const savedMood = typeof window !== 'undefined' ? (localStorage.getItem(moodStorageKey) as ProfileMoodType) : null;
+  const currentMood: ProfileMoodType = savedMood && savedMood in MOOD_OPTIONS ? savedMood : 'Creative';
+  const moodConfig = MOOD_OPTIONS[currentMood] || MOOD_OPTIONS.Creative;
+
   return (
     <div className="space-y-3 p-3 pb-24">
       {/* 1. TOP: RETRO 2008 MYSPACE PROFILE BANNER */}
       <section
         id="home-profile-banner"
-        className="rounded-xl bg-[#140e2b] border border-purple-800/60 p-3 shadow-md relative overflow-hidden"
+        className="rounded-xl bg-[#140e2b] border border-purple-800/60 p-3 shadow-md relative overflow-hidden transition-all duration-300"
+        style={{
+          borderBottom: `3px solid ${moodConfig.borderColor}`,
+          boxShadow: `0 4px 18px ${moodConfig.glow}`,
+        }}
       >
         {/* Subtle retro top color accent bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
@@ -102,9 +113,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* Retro 2008 Headline / Mood */}
-            <div className="text-[11px] text-slate-300 mt-1 truncate">
-              <span className="text-pink-400 font-semibold">Mood:</span> Cyberpunk 👾 •{' '}
-              <span className="text-cyan-300 italic">"Creating the next wave"</span>
+            <div
+              onClick={() => onSelectTab('profile')}
+              className="text-[11px] text-slate-300 mt-1 truncate cursor-pointer hover:text-white transition-colors"
+              title="Click to edit mood in Profile"
+            >
+              <span className="text-pink-400 font-semibold">Mood:</span> {moodConfig.emoji} {currentMood} •{' '}
+              <span className="text-cyan-300 italic">"{moodConfig.description}"</span>
             </div>
 
             {/* Profile Anthem / Song mini ticker */}

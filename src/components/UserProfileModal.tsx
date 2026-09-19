@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { SocialUser, Friend, BlockedUser } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
+import { BannerSocialLinks, ProfileHeaderSocialLinks } from './SocialIcons';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -141,6 +142,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+
+          {/* Social Links on banner */}
+          <div className="absolute bottom-2 right-3 z-20">
+            <BannerSocialLinks
+              socialLinks={user.socialLinks}
+              userId={user.id}
+              isPreviewMode={true}
+            />
           </div>
         </div>
 
@@ -305,6 +315,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {user.statusText}
               </span>
             </div>
+
+            {/* Connected Social Accounts with Brand Colors on Profile Header */}
+            {user.socialLinks && (
+              <div className="pt-1">
+                <ProfileHeaderSocialLinks socialLinks={user.socialLinks} size="sm" />
+              </div>
+            )}
           </div>
 
           {/* Blocked banner notice */}

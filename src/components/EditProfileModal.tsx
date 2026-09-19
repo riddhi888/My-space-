@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Check,
@@ -12,19 +12,31 @@ import {
   FileText,
   Eye,
   RotateCcw,
+  Link2,
+  ExternalLink,
+  Globe,
 } from 'lucide-react';
-import { UserProfile } from '../types';
+import { UserProfile, UserSocialLinks } from '../types';
+import {
+  SOCIAL_PLATFORMS,
+  loadSocialLinksFromStorage,
+  saveSocialLinksToStorage,
+  BannerSocialLinks,
+  normalizeUrl,
+} from './SocialIcons';
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserProfile;
+  initialTab?: 'info' | 'social' | 'avatar' | 'cover' | 'preview';
   onSave: (updatedData: {
     name: string;
     handle: string;
     bio: string;
     avatar: string;
     coverImage: string;
+    socialLinks?: UserSocialLinks;
   }) => void;
 }
 
@@ -101,6 +113,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
   user,
+  initialTab,
   onSave,
 }) => {
   const [name, setName] = useState(user.name);
@@ -108,14 +121,61 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [bio, setBio] = useState(user.bio);
   const [avatar, setAvatar] = useState(user.avatar);
   const [coverImage, setCoverImage] = useState(user.coverImage);
-  const [activeTab, setActiveTab] = useState<'info' | 'avatar' | 'cover' | 'preview'>('info');
+  const [socialLinks, setSocialLinks] = useState<UserSocialLinks>(() =>
+    loadSocialLinksFromStorage(user.id, user.socialLinks)
+  );
+  const [activeTab, setActiveTab] = useState<'info' | 'social' | 'avatar' | 'cover' | 'preview'>(
+    initialTab || 'info'
+  );
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setName(user.name);
+      setHandle(user.handle.startsWith('@') ? user.handle : `@${user.handle}`);
+      setBio(user.bio);
+      setAvatar(user.avatar);
+      setCoverImage(user.coverImage);
+      setSocialLinks(loadSocialLinksFromStorage(user.id, user.socialLinks));
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
+    }
+  }, [isOpen, user, initialTab]);
+
   if (!isOpen) return null;
+
+  const connectedCount = Object.values(socialLinks).filter((url) => Boolean(url && url.trim())).length;
+
+  const handleUpdateSocialLink = (key: keyof UserSocialLinks, value: string) => {
+    setSocialLinks((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleClearSocialLinks = () => {
+    setSocialLinks({
+      facebook: '',
+      youtube: '',
+      instagram: '',
+      spotify: '',
+    });
+  };
+
+  const handleFillSampleSocialLinks = () => {
+    const sampleHandle = handle.replace('@', '') || 'cyber_voyager';
+    setSocialLinks({
+      facebook: `https://facebook.com/${sampleHandle}.cyber`,
+      youtube: `https://youtube.com/@${sampleHandle}`,
+      instagram: `https://instagram.com/${sampleHandle}`,
+      spotify: `https://open.spotify.com/artist/lazerhawk`,
+    });
+  };
 
   // Handle uploading avatar from local device
   const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,6 +232,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setBio(user.bio);
     setAvatar(user.avatar);
     setCoverImage(user.coverImage);
+    setSocialLinks(loadSocialLinksFromStorage(user.id, user.socialLinks));
     setErrorMsg(null);
   };
 
@@ -193,12 +254,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       ? handle.trim()
       : `@${handle.trim()}`;
 
+    // 1. Save social links directly to localStorage under 'socialLinks' as requested
+    localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
+    saveSocialLinksToStorage(user.id, socialLinks);
+
+    // 2. Pass complete profile and socialLinks upward to accountService
     onSave({
       name: name.trim(),
       handle: cleanHandle,
       bio: bio.trim(),
       avatar: avatar.trim() || DEFAULT_FALLBACK_AVATAR,
       coverImage: coverImage.trim(),
+      socialLinks,
     });
 
     setSaveSuccess(true);
@@ -207,6 +274,102 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       onClose();
     }, 600);
   };
+
+  // Reusable My Social Links inputs renderer
+  const renderMySocialLinksInputs = () => (
+    <div className="space-y-3">
+      {SOCIAL_PLATFORMS.map((platform) => {
+        const currentValue = socialLinks[platform.key] || '';
+        const hasValue = Boolean(currentValue.trim());
+
+        return (
+          <div
+            key={platform.key}
+            className="p-3 rounded-2xl bg-[#090714] border border-purple-900/50 space-y-2 hover:border-purple-700/60 transition-colors shadow-inner"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center text-white shadow-sm"
+                  style={{
+                    background: platform.bgActive,
+                    boxShadow: `0 0 8px ${platform.brandGlow}`,
+                  }}
+                >
+                  {platform.renderIcon('w-3.5 h-3.5')}
+                </div>
+                <label
+                  htmlFor={`edit-social-input-${platform.key}`}
+                  className="text-xs font-semibold text-white cursor-pointer"
+                >
+                  {platform.label}
+                </label>
+              </div>
+
+              {hasValue && (
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={normalizeUrl(currentValue)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded-lg bg-purple-900/40 hover:bg-purple-800 text-cyan-300 hover:text-white text-[10px] font-mono flex items-center gap-1 transition-colors"
+                    title="Test external link in new tab"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Test
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateSocialLink(platform.key, '')}
+                    className="p-1 rounded-lg hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                    title="Clear URL"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <input
+                id={`edit-social-input-${platform.key}`}
+                type="url"
+                value={currentValue}
+                onChange={(e) => handleUpdateSocialLink(platform.key, e.target.value)}
+                placeholder={platform.placeholder}
+                className="w-full px-3 py-2 rounded-xl bg-[#070510] border border-purple-900/60 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-pink-500 transition-colors shadow-inner font-mono"
+              />
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Helper Actions for Quick Fill / Clear */}
+      <div className="pt-1 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          id="fill-sample-social-links-btn"
+          onClick={handleFillSampleSocialLinks}
+          className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 text-pink-300 hover:text-white border border-purple-800/50 text-[10px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <Sparkles className="w-3 h-3 text-pink-400" />
+          Fill Sample URLs
+        </button>
+
+        {connectedCount > 0 && (
+          <button
+            type="button"
+            id="clear-all-social-links-btn"
+            onClick={handleClearSocialLinks}
+            className="px-3 py-1.5 rounded-xl bg-rose-950/30 hover:bg-rose-950/60 text-rose-400 hover:text-rose-300 border border-rose-900/40 text-[10px] font-mono transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <Trash2 className="w-3 h-3" />
+            Clear All Links
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
@@ -248,6 +411,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           >
             <User className="w-3.5 h-3.5" />
             Info & Bio
+          </button>
+          <button
+            id="edit-tab-social-btn"
+            onClick={() => setActiveTab('social')}
+            className={`px-3 py-2 text-xs font-semibold rounded-t-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'social'
+                ? 'bg-[#150d30] text-pink-400 border-t-2 border-pink-500 shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            My Social Links
+            {connectedCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 text-[9px] font-mono border border-pink-500/40">
+                {connectedCount}
+              </span>
+            )}
           </button>
           <button
             id="edit-tab-avatar-btn"
@@ -392,6 +572,50 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* MY SOCIAL LINKS SECTION */}
+              <div id="my-social-links-section" className="pt-4 border-t border-purple-900/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
+                      <Link2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-white font-display">
+                        My Social Links
+                      </h3>
+                      <p className="text-[10px] text-slate-400">
+                        Saved to <span className="text-cyan-300 font-mono">socialLinks</span> in localStorage
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-purple-900/60 text-cyan-300 text-[10px] font-mono border border-purple-700/50">
+                    {connectedCount}/4 linked
+                  </span>
+                </div>
+
+                {renderMySocialLinksInputs()}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MY SOCIAL LINKS */}
+          {activeTab === 'social' && (
+            <div id="my-social-links-tab-container" className="space-y-4">
+              {/* Header Box */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-[#130b29] to-pink-950/40 border border-purple-700/50 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-pink-400" />
+                  <h3 className="text-xs font-bold text-white font-display">
+                    My Social Links
+                  </h3>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Add your external profiles. Saved to local storage under <span className="text-cyan-300 font-mono">socialLinks</span>. Connected accounts display authentic brand icons on your profile header. If a link is empty, its icon is hidden.
+                </p>
+              </div>
+
+              {renderMySocialLinksInputs()}
             </div>
           )}
 
@@ -626,6 +850,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     <div className="w-full h-full bg-gradient-to-r from-purple-950 via-[#180f33] to-pink-950" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-transparent" />
+                  
+                  {/* Social links preview right on the cover banner */}
+                  <div className="absolute bottom-1.5 right-2 z-20 scale-90 origin-bottom-right">
+                    <BannerSocialLinks
+                      socialLinks={socialLinks}
+                      userId={user.id}
+                      isPreviewMode={false}
+                      onOpenEditModal={() => setActiveTab('social')}
+                    />
+                  </div>
                 </div>
 
                 {/* Avatar & Info */}

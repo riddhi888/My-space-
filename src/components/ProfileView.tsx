@@ -32,9 +32,91 @@ import {
   Bell,
   Radio,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
-import { UserProfile, Friend, SocialPost, SharedLink, MusicTrack, Reel, UserSettings, NotificationItem, TabType } from '../types';
+import {
+  UserProfile,
+  Friend,
+  SocialPost,
+  SharedLink,
+  MusicTrack,
+  Reel,
+  UserSettings,
+  NotificationItem,
+  TabType,
+  ProfileMoodType,
+  UserSocialLinks,
+} from '../types';
 import { EditProfileModal } from './EditProfileModal';
+import { GuestbookWall } from './GuestbookWall';
+import { Top8FriendsManager } from './Top8FriendsManager';
+import {
+  BannerSocialLinks,
+  ProfileHeaderSocialLinks,
+  loadSocialLinksFromStorage,
+  saveSocialLinksToStorage,
+} from './SocialIcons';
+
+export const MOOD_OPTIONS: Record<
+  ProfileMoodType,
+  {
+    label: string;
+    emoji: string;
+    color: string;
+    glow: string;
+    borderColor: string;
+    description: string;
+  }
+> = {
+  Ecstatic: {
+    label: 'Ecstatic',
+    emoji: '😁',
+    color: '#f59e0b',
+    glow: 'rgba(245, 158, 11, 0.55)',
+    borderColor: '#f59e0b',
+    description: 'feeling on top of the world :D',
+  },
+  Bored: {
+    label: 'Bored',
+    emoji: '🥱',
+    color: '#94a3b8',
+    glow: 'rgba(148, 163, 184, 0.4)',
+    borderColor: '#94a3b8',
+    description: 'someone entertain me -_-',
+  },
+  Hungover: {
+    label: 'Hungover',
+    emoji: '😵‍💫',
+    color: '#a3e635',
+    glow: 'rgba(163, 230, 53, 0.5)',
+    borderColor: '#a3e635',
+    description: 'too much energy drink last night x_x',
+  },
+  Hyper: {
+    label: 'Hyper',
+    emoji: '⚡',
+    color: '#ec4899',
+    glow: 'rgba(236, 72, 153, 0.6)',
+    borderColor: '#ec4899',
+    description: 'CANNOT SIT STILL >_< !!!',
+  },
+  Melancholy: {
+    label: 'Melancholy',
+    emoji: '🥀',
+    color: '#818cf8',
+    glow: 'rgba(129, 140, 248, 0.5)',
+    borderColor: '#818cf8',
+    description: 'listening to sad songs in the dark :(',
+  },
+  Creative: {
+    label: 'Creative',
+    emoji: '🎨',
+    color: '#22d3ee',
+    glow: 'rgba(34, 211, 238, 0.6)',
+    borderColor: '#22d3ee',
+    description: 'coding my profile layout & making art ;)',
+  },
+};
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -53,6 +135,7 @@ interface ProfileViewProps {
     bio: string;
     avatar: string;
     coverImage: string;
+    socialLinks?: UserSocialLinks;
   }) => void;
   onOpenNetworkList?: (tab: 'followers' | 'following') => void;
   onDiscoverPeople?: () => void;
@@ -95,10 +178,57 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [isPlayingSong, setIsPlayingSong] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'entertainment' | 'notifications' | 'links' | 'top8' | 'favorites' | 'gallery'>('posts');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editModalInitialTab, setEditModalInitialTab] = useState<'info' | 'social' | 'avatar' | 'cover' | 'preview'>('info');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isVisitorFollowing, setIsVisitorFollowing] = useState(false);
   const [isVisitorFriendRequested, setIsVisitorFriendRequested] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Social Links State with localStorage sync
+  const [socialLinksState, setSocialLinksState] = useState<UserSocialLinks>(() =>
+    loadSocialLinksFromStorage(user.id, user.socialLinks)
+  );
+
+  React.useEffect(() => {
+    const handleSync = () => {
+      setSocialLinksState(loadSocialLinksFromStorage(user.id, user.socialLinks));
+    };
+    handleSync();
+    window.addEventListener('socialLinks-updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('socialLinks-updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, [user.id, user.socialLinks]);
+
+  // 2008 Retro Mood State
+  const moodStorageKey = `myspace_user_mood_${user.id || 'default'}`;
+  const [currentMood, setCurrentMood] = useState<ProfileMoodType>(() => {
+    try {
+      const saved = localStorage.getItem(moodStorageKey);
+      if (saved && saved in MOOD_OPTIONS) {
+        return saved as ProfileMoodType;
+      }
+    } catch {
+      // fallback
+    }
+    return 'Creative';
+  });
+  const [isMoodDropdownOpen, setIsMoodDropdownOpen] = useState(false);
+
+  const handleSelectMood = (mood: ProfileMoodType) => {
+    setCurrentMood(mood);
+    setIsMoodDropdownOpen(false);
+    try {
+      localStorage.setItem(moodStorageKey, mood);
+    } catch (e) {
+      console.error('Failed to save mood', e);
+    }
+    showToast(`Mood updated to: ${MOOD_OPTIONS[mood].emoji} ${mood}`);
+  };
+
+  const activeMoodConfig = MOOD_OPTIONS[currentMood] || MOOD_OPTIONS.Creative;
 
   // Filter posts authored by this user
   const userPosts = posts.filter(
@@ -205,8 +335,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* 2. COVER BANNER WITH NEON GRADIENT OVERLAY */}
-      <div className="relative h-40 w-full overflow-hidden bg-[#0a0717]">
+      {/* 2. COVER BANNER WITH NEON GRADIENT OVERLAY & MOOD BORDER */}
+      <div
+        id="profile-cover-banner"
+        className="relative h-40 w-full overflow-hidden bg-[#0a0717] transition-all duration-300 border-b-4"
+        style={{
+          borderColor: activeMoodConfig.borderColor,
+          boxShadow: `0 6px 24px ${activeMoodConfig.glow}`,
+        }}
+      >
         {user.coverImage ? (
           <img
             src={user.coverImage}
@@ -247,6 +384,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <Settings className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* CONNECTED SOCIAL ACCOUNTS ON BANNER */}
+        <div className="absolute bottom-2.5 right-3 z-20">
+          <BannerSocialLinks
+            socialLinks={socialLinksState}
+            userId={user.id}
+            isPreviewMode={isPreviewMode}
+            onOpenEditModal={() => {
+              setEditModalInitialTab('social');
+              setIsEditModalOpen(true);
+            }}
+          />
         </div>
       </div>
 
@@ -361,17 +511,91 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           )}
         </div>
 
-        {/* Display Name & Username (@handle) */}
-        <div>
-          <div className="flex items-center gap-2">
+        {/* Display Name, Mood Dropdown, & Username (@handle) */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="font-display font-black text-xl text-white tracking-wide">
               {user.name}
             </h1>
+
+            {/* Retro 2008 Mood Dropdown beside profile name */}
+            <div className="relative inline-block">
+              <button
+                type="button"
+                id="profile-mood-dropdown-btn"
+                onClick={() => setIsMoodDropdownOpen(!isMoodDropdownOpen)}
+                className="px-2 py-0.5 rounded-md border text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer select-none hover:scale-102 active:scale-95"
+                style={{
+                  borderColor: activeMoodConfig.color,
+                  backgroundColor: `${activeMoodConfig.color}20`,
+                  color: activeMoodConfig.color,
+                  boxShadow: `0 0 10px ${activeMoodConfig.color}35`,
+                }}
+                title="Change 2008 MySpace Mood"
+              >
+                <span>{activeMoodConfig.emoji}</span>
+                <span className="font-bold">Mood: {currentMood}</span>
+                <ChevronDown className="w-3 h-3 opacity-70" />
+              </button>
+
+              {/* 2008 Retro Mood Dropdown Popup */}
+              {isMoodDropdownOpen && (
+                <div
+                  id="profile-mood-dropdown-menu"
+                  className="absolute left-0 top-full mt-1 z-40 w-48 rounded-xl bg-[#120824] border-2 border-purple-600/80 p-1 shadow-[0_0_25px_rgba(0,0,0,0.85)] space-y-0.5 text-xs animate-in fade-in duration-100"
+                >
+                  <div className="px-2 py-1 border-b border-purple-800/40 text-[9px] font-mono text-cyan-300 flex items-center justify-between">
+                    <span>STATUS: 2008 MOOD</span>
+                    <span className="text-[8px] text-pink-400">Updates Banner</span>
+                  </div>
+
+                  {(Object.keys(MOOD_OPTIONS) as ProfileMoodType[]).map((moodKey) => {
+                    const item = MOOD_OPTIONS[moodKey];
+                    const isSelected = currentMood === moodKey;
+                    return (
+                      <button
+                        key={moodKey}
+                        type="button"
+                        onClick={() => handleSelectMood(moodKey)}
+                        className={`w-full px-2 py-1 rounded-md text-left flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-900/80 text-white font-bold'
+                            : 'hover:bg-purple-950/60 text-slate-300'
+                        }`}
+                        style={{
+                          borderLeft: isSelected ? `3px solid ${item.color}` : '3px solid transparent',
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{item.emoji}</span>
+                          <span className="text-[11px] font-medium">{moodKey}</span>
+                        </div>
+                        {isSelected && (
+                          <span className="text-[8px] font-mono font-bold" style={{ color: item.color }}>
+                            ✓ Active
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-mono flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-pink-400" /> VIP CREATOR
             </span>
           </div>
-          <p className="text-xs text-cyan-400 font-mono mt-0.5">{user.handle}</p>
+
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <p className="text-cyan-400 font-mono font-medium">{user.handle}</p>
+            <span className="text-[10px] text-slate-400 font-mono italic">
+              — feeling {activeMoodConfig.description}
+            </span>
+          </div>
+
+          {/* Connected Social Accounts with Brand Colors on Profile Header */}
+          <ProfileHeaderSocialLinks socialLinks={socialLinksState} size="md" />
         </div>
 
         {/* Bio */}
@@ -385,6 +609,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {user.bio}
           </p>
         )}
+
+        {/* 1. GUESTBOOK WALL (Right below bio as requested) */}
+        <GuestbookWall userId={user.id} userName={user.name} />
 
         {/* Profile Song Card (The Classic Iconic MySpace Anthem!) */}
         <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/70 via-[#181033] to-pink-950/60 border border-pink-500/30 shadow-[0_0_20px_rgba(236,72,153,0.15)] flex items-center justify-between">
@@ -1164,45 +1391,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         {/* ================= TAB 4: TOP 8 FRIENDS & BADGES ================= */}
         {activeTab === 'top8' && (
           <div className="space-y-4">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-300">
-                  {user.name}'s Inner Circle (Top 8 Friends)
-                </span>
-                <span className="text-pink-400 font-mono text-[10px]">
-                  Tap friend to open chat
-                </span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2.5">
-                {user.top8Friends.map((friend) => (
-                  <button
-                    key={friend.id}
-                    id={`top8-friend-${friend.id}`}
-                    onClick={() => onOpenChatWithFriend(friend)}
-                    className="flex flex-col items-center p-2 rounded-2xl bg-[#120c29] border border-purple-800/40 hover:border-pink-500/50 transition-all group cursor-pointer focus:outline-none"
-                  >
-                    <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 group-hover:scale-105 transition-transform">
-                      <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        referrerPolicy="no-referrer"
-                        className="w-13 h-13 rounded-full object-cover border-2 border-[#090714]"
-                      />
-                      {friend.isOnline && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
-                      )}
-                    </div>
-                    <span className="text-[11px] font-semibold text-white mt-1.5 truncate max-w-full group-hover:text-pink-300">
-                      {friend.name.split(' ')[0]}
-                    </span>
-                    <span className="text-[9px] text-cyan-300 font-mono truncate max-w-full">
-                      {friend.handle}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Draggable & Editable Top 8 Friends Manager */}
+            <Top8FriendsManager
+              friends={user.top8Friends}
+              userId={user.id}
+              onOpenChatWithFriend={onOpenChatWithFriend}
+            />
 
             {/* Badges showcase */}
             <div className="space-y-2 pt-2 border-t border-purple-900/40">
@@ -1254,8 +1448,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        user={user}
+        user={{ ...user, socialLinks: socialLinksState }}
+        initialTab={editModalInitialTab}
         onSave={(updatedData) => {
+          if (updatedData.socialLinks) {
+            setSocialLinksState(updatedData.socialLinks);
+            saveSocialLinksToStorage(user.id, updatedData.socialLinks);
+          }
           onUpdateProfile(updatedData);
           showToast('Profile updated successfully! ✨');
         }}

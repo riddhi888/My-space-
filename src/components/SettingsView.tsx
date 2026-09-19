@@ -35,7 +35,7 @@ import {
   Ban,
   Layers,
 } from 'lucide-react';
-import { UserProfile, UserSettings, BlockedUser, ChatThread } from '../types';
+import { UserProfile, UserSettings, BlockedUser, ChatThread, AppTheme } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 
 interface SettingsViewProps {
@@ -65,7 +65,7 @@ const AVATAR_PRESETS = [
 ];
 
 const DEFAULT_SETTINGS: UserSettings = {
-  theme: 'neon',
+  theme: 'classic-blue',
   notifications: {
     pushEnabled: true,
     chatMessages: true,
@@ -183,7 +183,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  const handleSelectTheme = (theme: 'neon' | 'dark' | 'electric') => {
+  const handleSelectTheme = (theme: AppTheme) => {
+    // Apply immediately to DOM for instant visual responsiveness
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.className = `theme-${theme}`;
+    try {
+      localStorage.setItem('myspace_theme', theme);
+    } catch (e) {
+      console.error('Failed to save myspace_theme', e);
+    }
+
+    // Trigger custom event for real-time app sync
+    window.dispatchEvent(new CustomEvent('myspace-theme-changed', { detail: { theme } }));
+
     setSettings((prev) => {
       const updated = { ...prev, theme };
       try {
@@ -466,74 +478,99 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Select your favorite color mode. Neon accents and glassmorphism glow dynamically across all screens.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-            {/* Cyber Neon (Default) */}
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            {/* 1. Classic Blue */}
             <button
               type="button"
-              id="theme-cyber-neon-btn"
-              onClick={() => handleSelectTheme('neon')}
+              id="theme-classic-blue-btn"
+              onClick={() => handleSelectTheme('classic-blue')}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                settings.theme === 'neon'
-                  ? 'bg-purple-950/80 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.35)]'
+                settings.theme === 'classic-blue'
+                  ? 'bg-blue-950/90 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                  : 'bg-[#08152c]/50 border-blue-900/40 hover:border-blue-700/60'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-blue-600 shadow-[0_0_6px_#2563eb]" />
+                  <div className="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_6px_#60a5fa]" />
+                  <div className="w-3 h-3 rounded-full bg-sky-200" />
+                </div>
+                {settings.theme === 'classic-blue' && <Check className="w-4 h-4 text-blue-400" />}
+              </div>
+              <h4 className="font-bold text-xs text-white">Classic Blue</h4>
+              <p className="text-[10px] text-blue-300 mt-0.5">Iconic 2008 MySpace royal blue & navy</p>
+            </button>
+
+            {/* 2. Emo Black Pink */}
+            <button
+              type="button"
+              id="theme-emo-black-pink-btn"
+              onClick={() => handleSelectTheme('emo-black-pink')}
+              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                settings.theme === 'emo-black-pink'
+                  ? 'bg-[#1a051d] border-pink-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]'
+                  : 'bg-[#100313]/50 border-pink-950/60 hover:border-pink-800'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-black border border-pink-500 shadow-[0_0_6px_#ec4899]" />
+                  <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_6px_#ec4899]" />
+                  <div className="w-3 h-3 rounded-full bg-rose-400" />
+                </div>
+                {settings.theme === 'emo-black-pink' && <Check className="w-4 h-4 text-pink-400" />}
+              </div>
+              <h4 className="font-bold text-xs text-white">Emo Black Pink</h4>
+              <p className="text-[10px] text-pink-300 mt-0.5">Scenecore deep black & hot neon pink</p>
+            </button>
+
+            {/* 3. Vaporwave Purple */}
+            <button
+              type="button"
+              id="theme-vaporwave-purple-btn"
+              onClick={() => handleSelectTheme('vaporwave-purple')}
+              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                settings.theme === 'vaporwave-purple' || settings.theme === 'neon'
+                  ? 'bg-purple-950/90 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.5)]'
                   : 'bg-purple-950/20 border-purple-900/40 hover:border-purple-700/60'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_6px_#ec4899]" />
                   <div className="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_6px_#a855f7]" />
-                  <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+                  <div className="w-3 h-3 rounded-full bg-pink-500 shadow-[0_0_6px_#ec4899]" />
+                  <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_6px_#06b6d4]" />
                 </div>
-                {settings.theme === 'neon' && <Check className="w-4 h-4 text-pink-400" />}
+                {(settings.theme === 'vaporwave-purple' || settings.theme === 'neon') && (
+                  <Check className="w-4 h-4 text-purple-400" />
+                )}
               </div>
-              <h4 className="font-bold text-xs text-white">Cyber Neon</h4>
-              <p className="text-[10px] text-pink-300 mt-0.5">Iconic purple, blue & pink glow</p>
+              <h4 className="font-bold text-xs text-white">Vaporwave Purple</h4>
+              <p className="text-[10px] text-purple-300 mt-0.5">Twilight purple, magenta & synth cyan</p>
             </button>
 
-            {/* Deep Obsidian Dark */}
+            {/* 4. Matrix Green */}
             <button
               type="button"
-              id="theme-deep-dark-btn"
-              onClick={() => handleSelectTheme('dark')}
+              id="theme-matrix-green-btn"
+              onClick={() => handleSelectTheme('matrix-green')}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                settings.theme === 'dark'
-                  ? 'bg-neutral-900 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.35)]'
-                  : 'bg-neutral-950/60 border-neutral-800 hover:border-neutral-700'
+                settings.theme === 'matrix-green'
+                  ? 'bg-[#051a0b] border-emerald-400 shadow-[0_0_15px_rgba(34,197,94,0.5)]'
+                  : 'bg-[#031006]/50 border-emerald-950 hover:border-emerald-800'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-neutral-900 border border-neutral-700" />
-                  <div className="w-3 h-3 rounded-full bg-purple-600" />
-                  <div className="w-3 h-3 rounded-full bg-neutral-400" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_6px_#22c55e]" />
+                  <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_6px_#4ade80]" />
+                  <div className="w-3 h-3 rounded-full bg-lime-300" />
                 </div>
-                {settings.theme === 'dark' && <Check className="w-4 h-4 text-purple-400" />}
+                {settings.theme === 'matrix-green' && <Check className="w-4 h-4 text-emerald-400" />}
               </div>
-              <h4 className="font-bold text-xs text-white">Deep Obsidian</h4>
-              <p className="text-[10px] text-slate-400 mt-0.5">High contrast minimalist dark</p>
-            </button>
-
-            {/* Electric Blue Matrix */}
-            <button
-              type="button"
-              id="theme-electric-blue-btn"
-              onClick={() => handleSelectTheme('electric')}
-              className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                settings.theme === 'electric'
-                  ? 'bg-[#09152b] border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.35)]'
-                  : 'bg-[#070f20]/60 border-blue-950 hover:border-blue-800'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
-                  <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_6px_#3b82f6]" />
-                  <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                </div>
-                {settings.theme === 'electric' && <Check className="w-4 h-4 text-cyan-400" />}
-              </div>
-              <h4 className="font-bold text-xs text-white">Electric Blue</h4>
-              <p className="text-[10px] text-cyan-300 mt-0.5">Navy cyberpunk grid matrix</p>
+              <h4 className="font-bold text-xs text-white">Matrix Green</h4>
+              <p className="text-[10px] text-emerald-300 mt-0.5">Terminal phosphor green & cyber black</p>
             </button>
           </div>
         </div>

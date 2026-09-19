@@ -11,6 +11,7 @@ import {
   ConnectedAppAccount,
   ConnectedPlatform,
   UserProfile,
+  UserSocialLinks,
 } from './types';
 import {
   currentUser as initialUser,
@@ -25,6 +26,7 @@ import {
   mockSharedLinks,
 } from './data/mockData';
 import { AccountService, SEED_ACCOUNTS } from './services/accountService';
+import { loadSocialLinksFromStorage, saveSocialLinksToStorage } from './components/SocialIcons';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { HomeView } from './components/HomeView';
@@ -97,6 +99,43 @@ export default function App() {
   // Unread counts
   const unreadChatCount = chatThreads.reduce((acc, t) => acc + t.unreadCount, 0);
   const unreadNotificationsCount = notifications.filter((n) => !n.isRead).length;
+
+  // Sync and apply 2008 retro theme
+  useEffect(() => {
+    const applyTheme = (themeName: string) => {
+      document.documentElement.setAttribute('data-theme', themeName);
+      document.body.className = `theme-${themeName}`;
+    };
+
+    try {
+      const savedTheme = localStorage.getItem('myspace_theme');
+      if (savedTheme) {
+        applyTheme(savedTheme);
+      } else {
+        const rawSettings = localStorage.getItem('myspace_user_settings_v1');
+        if (rawSettings) {
+          const parsed = JSON.parse(rawSettings);
+          if (parsed?.theme) {
+            applyTheme(parsed.theme);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore theme', e);
+    }
+
+    const handleThemeEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ theme?: string }>;
+      if (customEvent.detail?.theme) {
+        applyTheme(customEvent.detail.theme);
+      }
+    };
+
+    window.addEventListener('myspace-theme-changed', handleThemeEvent);
+    return () => {
+      window.removeEventListener('myspace-theme-changed', handleThemeEvent);
+    };
+  }, []);
 
   // Social/Friends System Handlers
   const handleToggleFollow = (userId: string) => {
@@ -640,7 +679,14 @@ export default function App() {
     bio: string;
     avatar: string;
     coverImage: string;
+    socialLinks?: UserSocialLinks;
   }) => {
+    // If social links are provided, ensure persistent storage
+    const currentSocial = updated.socialLinks || loadSocialLinksFromStorage(user.id, user.socialLinks);
+    if (updated.socialLinks) {
+      saveSocialLinksToStorage(user.id, updated.socialLinks);
+    }
+
     const updatedProfile: UserProfile = {
       ...user,
       name: updated.name,
@@ -648,6 +694,7 @@ export default function App() {
       bio: updated.bio,
       avatar: updated.avatar,
       coverImage: updated.coverImage,
+      socialLinks: currentSocial,
     };
     setUser(updatedProfile);
 

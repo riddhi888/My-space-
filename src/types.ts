@@ -9,6 +9,13 @@ export type TabType =
   | 'settings'
   | 'connected-apps';
 
+export interface UserSocialLinks {
+  facebook?: string;
+  youtube?: string;
+  instagram?: string;
+  spotify?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -29,6 +36,7 @@ export interface UserProfile {
   };
   top8Friends: Friend[];
   badges: string[];
+  socialLinks?: UserSocialLinks;
 }
 
 export interface Friend {
@@ -41,7 +49,34 @@ export interface Friend {
   storyImage?: string;
   hasUnreadStory?: boolean;
   lastSeen?: string;
+  caption?: string;
 }
+
+export type ProfileMoodType =
+  | 'Ecstatic'
+  | 'Bored'
+  | 'Hungover'
+  | 'Hyper'
+  | 'Melancholy'
+  | 'Creative';
+
+export interface GuestbookEntry {
+  id: string;
+  authorName: string;
+  message: string;
+  sticker: string;
+  timestamp: string;
+  likes?: number;
+}
+
+export type AppTheme =
+  | 'classic-blue'
+  | 'emo-black-pink'
+  | 'vaporwave-purple'
+  | 'matrix-green'
+  | 'neon'
+  | 'dark'
+  | 'electric';
 
 export interface Message {
   id: string;
@@ -167,7 +202,7 @@ export interface BlockedUser {
 }
 
 export interface UserSettings {
-  theme: 'neon' | 'dark' | 'electric';
+  theme: AppTheme;
   notifications: {
     pushEnabled: boolean;
     chatMessages: boolean;
@@ -218,6 +253,7 @@ export interface SocialUser {
   tags?: string[];
   recentGameScore?: number;
   gameTitle?: string;
+  socialLinks?: UserSocialLinks;
 }
 
 export interface MusicTrack {
