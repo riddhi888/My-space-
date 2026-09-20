@@ -12,6 +12,7 @@ import {
   ConnectedPlatform,
   UserProfile,
   UserSocialLinks,
+  ChatThread,
 } from './types';
 import {
   currentUser as initialUser,
@@ -35,7 +36,6 @@ import { SocialView } from './components/SocialView';
 import { GamesView } from './components/GamesView';
 import { ProfileView } from './components/ProfileView';
 import { MusicView } from './components/MusicView';
-import { MiniMusicPlayer } from './components/MiniMusicPlayer';
 import { MusicProvider } from './context/MusicContext';
 import { ReelsModal } from './components/ReelsModal';
 import { YouTubeModal } from './components/YouTubeModal';
@@ -61,7 +61,25 @@ const getInitialProfile = (): UserProfile => {
         const rawSocial = localStorage.getItem('socialLinks');
         const socialLinks = rawSocial ? JSON.parse(rawSocial) : parsed.socialLinks || {};
         return {
-          ...parsed,
+          id: parsed.id || 'user_local',
+          name: parsed.name,
+          handle: parsed.handle || '',
+          avatar: parsed.avatar || '',
+          coverImage: parsed.coverImage || '',
+          bio: parsed.bio || '',
+          badges: parsed.badges || [],
+          profileSong: {
+            title: parsed.profileSong?.title || '',
+            artist: parsed.profileSong?.artist || '',
+            duration: parsed.profileSong?.duration || '',
+          },
+          top8Friends: parsed.top8Friends || [],
+          stats: {
+            friends: 0,
+            followers: '0',
+            views: '0',
+            posts: parsed.stats?.posts || 0,
+          },
           socialLinks,
         };
       }
@@ -85,21 +103,18 @@ const getInitialProfile = (): UserProfile => {
     avatar: '',
     coverImage: '',
     bio: '',
-    isOnline: true,
     badges: [],
     profileSong: {
       title: '',
       artist: '',
-      album: '',
-      cover: '',
-      isAutoplay: false,
+      duration: '',
     },
     top8Friends: [],
     stats: {
-      profileViews: 0,
       friends: 0,
+      followers: '0',
+      views: '0',
       posts: 0,
-      followers: 0,
     },
     socialLinks: {
       facebook: '',
@@ -110,30 +125,46 @@ const getInitialProfile = (): UserProfile => {
   };
 };
 
+const createDefaultAccount = (profile: UserProfile): UserAccount => ({
+  id: profile.id || 'user_local',
+  email: `${(profile.handle || 'user').replace('@', '') || 'user'}@myspace.user`,
+  profile,
+  connectedApps: {
+    instagram: { platform: 'instagram', isConnected: false },
+    facebook: { platform: 'facebook', isConnected: false },
+    youtube: { platform: 'youtube', isConnected: false },
+  },
+  createdAt: new Date().toISOString(),
+});
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('home');
 
+  // User-isolated state (starts empty from localStorage 'myspace_user')
+  const [user, setUser] = useState<UserProfile>(getInitialProfile);
+
   // Account System State
   const [activeAccount, setActiveAccount] = useState<UserAccount>(() => {
-    return AccountService.getActiveAccount() || SEED_ACCOUNTS[0];
+    const existing = AccountService.getActiveAccount();
+    if (existing) return existing;
+    const initialProfile = getInitialProfile();
+    return createDefaultAccount(initialProfile);
   });
   const [isLoggedOut, setIsLoggedOut] = useState(false);
 
-  // User-isolated state (starts empty from localStorage 'myspace_user')
-  const [user, setUser] = useState<UserProfile>(getInitialProfile);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
-  const [friends, setFriends] = useState(initialFriends);
+  const [friends, setFriends] = useState<Friend[]>(initialFriends);
   const [socialUsers, setSocialUsers] = useState<SocialUser[]>(mockSocialUsers);
-  const [chatThreads, setChatThreads] = useState(() =>
-    AccountService.getSavedChats(activeAccount.id)
+  const [chatThreads, setChatThreads] = useState<ChatThread[]>(() =>
+    AccountService.getSavedChats(activeAccount?.id || 'user_local')
   );
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>(() =>
-    AccountService.getSavedPosts(activeAccount.id)
+    AccountService.getSavedPosts(activeAccount?.id || 'user_local')
   );
   const [reels, setReels] = useState<Reel[]>(mockReels);
-  const [notifications, setNotifications] = useState(() =>
-    AccountService.getSavedNotifications(activeAccount.id)
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
+    AccountService.getSavedNotifications(activeAccount?.id || 'user_local')
   );
   const [sharedLinks, setSharedLinks] = useState<SharedLink[]>(mockSharedLinks);
 
