@@ -185,12 +185,18 @@ export const FriendsListView: React.FC<FriendsListViewProps> = ({
                 >
                   <div className="relative shrink-0">
                     <div className="p-0.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 transition-transform">
-                      <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        referrerPolicy="no-referrer"
-                        className="w-12 h-12 rounded-full object-cover border-2 border-[#0c081e]"
-                      />
+                      {friend.avatar ? (
+                        <img
+                          src={friend.avatar}
+                          alt={friend.name}
+                          referrerPolicy="no-referrer"
+                          className="w-12 h-12 rounded-full object-cover border-2 border-[#0c081e]"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border-2 border-[#0c081e] font-bold font-mono text-sm">
+                          {friend.name ? friend.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      )}
                     </div>
 
                     {/* Online / Offline status indicator dot */}

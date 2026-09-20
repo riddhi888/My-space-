@@ -51,6 +51,7 @@ import { SettingsView } from './components/SettingsView';
 import { ConnectedAppsView } from './components/ConnectedAppsView';
 import { LoginScreen } from './components/LoginScreen';
 import { EditProfileModal } from './components/EditProfileModal';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const getInitialProfile = (): UserProfile => {
   try {
@@ -877,6 +878,9 @@ export default function App() {
   return (
     <MusicProvider>
       <div className="min-h-screen bg-[#090714] text-slate-100 flex justify-center">
+      {/* Offline Status Indicator */}
+      <OfflineIndicator />
+
       {/* Mobile-first centered frame */}
       <div className="w-full max-w-md min-h-screen flex flex-col bg-[#0b0818] relative shadow-[0_0_60px_rgba(168,85,247,0.2)] border-x border-purple-900/30">
         {/* Top Header */}

@@ -198,12 +198,18 @@ export const DiscoverPeopleView: React.FC<DiscoverPeopleViewProps> = ({
                 >
                   <div className="relative shrink-0">
                     <div className="p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 group-hover:scale-105 transition-transform">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        referrerPolicy="no-referrer"
-                        className="w-13 h-13 rounded-full object-cover border-2 border-[#0c081e]"
-                      />
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          referrerPolicy="no-referrer"
+                          className="w-13 h-13 rounded-full object-cover border-2 border-[#0c081e]"
+                        />
+                      ) : (
+                        <div className="w-13 h-13 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border-2 border-[#0c081e] font-bold font-mono text-sm">
+                          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      )}
                     </div>
                     {/* Online / Offline status badge */}
                     <span

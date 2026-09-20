@@ -166,12 +166,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             {/* Primary One-Click Action */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-pink-950/20 to-black/60 border border-purple-800/60 text-center space-y-3 shadow-inner">
               <div className="flex items-center justify-center gap-3">
-                <img
-                  src={currentSelectedAccount?.profile.avatar}
-                  alt={currentSelectedAccount?.profile.name}
-                  referrerPolicy="no-referrer"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.4)]"
-                />
+                {currentSelectedAccount?.profile.avatar ? (
+                  <img
+                    src={currentSelectedAccount.profile.avatar}
+                    alt={currentSelectedAccount?.profile.name}
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.4)]"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-purple-950 border-2 border-pink-500 flex items-center justify-center text-pink-400 text-sm font-bold font-mono">
+                    {currentSelectedAccount?.profile.name ? currentSelectedAccount.profile.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div className="text-left">
                   <div className="text-sm font-bold text-white flex items-center gap-1.5">
                     {currentSelectedAccount?.profile.name}
@@ -237,14 +243,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={acc.profile.avatar}
-                          alt={acc.profile.name}
-                          referrerPolicy="no-referrer"
-                          className={`w-9 h-9 rounded-full object-cover border shrink-0 ${
+                        {acc.profile.avatar ? (
+                          <img
+                            src={acc.profile.avatar}
+                            alt={acc.profile.name}
+                            referrerPolicy="no-referrer"
+                            className={`w-9 h-9 rounded-full object-cover border shrink-0 ${
+                              isSelected ? 'border-pink-400' : 'border-purple-700/50'
+                            }`}
+                          />
+                        ) : (
+                          <div className={`w-9 h-9 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 text-xs font-bold font-mono border shrink-0 ${
                             isSelected ? 'border-pink-400' : 'border-purple-700/50'
-                          }`}
-                        />
+                          }`}>
+                            {acc.profile.name ? acc.profile.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <div className="text-xs font-bold text-white group-hover:text-pink-300 truncate flex items-center gap-1.5">
                             {acc.profile.name}

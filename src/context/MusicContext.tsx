@@ -208,7 +208,8 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('ended', handleEnded);
       audio.pause();
-      audio.src = '';
+      audio.removeAttribute('src');
+      audio.load();
     };
   }, []);
 

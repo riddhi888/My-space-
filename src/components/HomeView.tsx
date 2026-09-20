@@ -9,6 +9,7 @@ import {
 import { TabType, UserProfile, ProfileMoodType } from '../types';
 import { MOOD_OPTIONS } from './ProfileView';
 import { ProfileHeaderSocialLinks } from './SocialIcons';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HomeViewProps {
   currentUser?: UserProfile;
@@ -168,6 +169,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           )}
         </div>
       </section>
+
+      {/* Mobile App Install Card */}
+      <PWAInstallButton variant="banner" />
     </div>
   );
 };

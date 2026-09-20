@@ -48,6 +48,8 @@ const mockVideos: YouTubeItem[] = [
   },
 ];
 
+const FALLBACK_YT_THUMBNAIL = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80';
+
 export const YouTubeModal: React.FC<YouTubeModalProps> = ({ isOpen, onClose }) => {
   const [activeVideo, setActiveVideo] = useState<YouTubeItem>(mockVideos[0]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -81,7 +83,7 @@ export const YouTubeModal: React.FC<YouTubeModalProps> = ({ isOpen, onClose }) =
         {/* Video Player Preview Stage */}
         <div className="relative aspect-video bg-black flex items-center justify-center group overflow-hidden">
           <img
-            src={activeVideo.thumbnail}
+            src={activeVideo.thumbnail || FALLBACK_YT_THUMBNAIL}
             alt={activeVideo.title}
             referrerPolicy="no-referrer"
             className={`w-full h-full object-cover transition-all duration-500 ${isPlaying ? 'brightness-100 scale-105' : 'brightness-75'}`}
@@ -191,7 +193,7 @@ export const YouTubeModal: React.FC<YouTubeModalProps> = ({ isOpen, onClose }) =
             >
               <div className="relative w-24 h-16 rounded-xl overflow-hidden shrink-0">
                 <img
-                  src={video.thumbnail}
+                  src={video.thumbnail || FALLBACK_YT_THUMBNAIL}
                   alt={video.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"

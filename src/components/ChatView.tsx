@@ -193,16 +193,24 @@ export const ChatView: React.FC<ChatViewProps> = ({
               title="Click to view full profile"
             >
               <div className="relative shrink-0">
-                <img
-                  src={activeThread.friend.avatar}
-                  alt={activeThread.friend.name}
-                  referrerPolicy="no-referrer"
-                  className={`w-10 h-10 rounded-full object-cover border-2 transition-colors ${
-                    isActiveBlocked
-                      ? 'border-rose-500/80 grayscale'
-                      : 'border-purple-500/40 group-hover:border-pink-500'
-                  }`}
-                />
+                {activeThread.friend.avatar ? (
+                  <img
+                    src={activeThread.friend.avatar}
+                    alt={activeThread.friend.name}
+                    referrerPolicy="no-referrer"
+                    className={`w-10 h-10 rounded-full object-cover border-2 transition-colors ${
+                      isActiveBlocked
+                        ? 'border-rose-500/80 grayscale'
+                        : 'border-purple-500/40 group-hover:border-pink-500'
+                    }`}
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 font-bold font-mono text-sm border-2 ${
+                    isActiveBlocked ? 'border-rose-500/80 grayscale' : 'border-purple-500/40'
+                  }`}>
+                    {activeThread.friend.name ? activeThread.friend.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 {/* Online / Offline status badge */}
                 {!isActiveBlocked && (
                   <span
@@ -662,14 +670,22 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
                 >
                   <div className="relative shrink-0">
-                    <img
-                      src={friend.avatar}
-                      alt={friend.name}
-                      referrerPolicy="no-referrer"
-                      className={`w-11 h-11 rounded-full object-cover border border-purple-500/40 ${
+                    {friend.avatar ? (
+                      <img
+                        src={friend.avatar}
+                        alt={friend.name}
+                        referrerPolicy="no-referrer"
+                        className={`w-11 h-11 rounded-full object-cover border border-purple-500/40 ${
+                          blocked ? 'grayscale' : ''
+                        }`}
+                      />
+                    ) : (
+                      <div className={`w-11 h-11 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 font-bold font-mono text-sm border border-purple-500/40 ${
                         blocked ? 'grayscale' : ''
-                      }`}
-                    />
+                      }`}>
+                        {friend.name ? friend.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span
                       className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#090714] ${
                         blocked
@@ -747,16 +763,24 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 >
                   {/* Avatar */}
                   <div className="relative shrink-0">
-                    <img
-                      src={thread.friend.avatar}
-                      alt={thread.friend.name}
-                      referrerPolicy="no-referrer"
-                      className={`w-13 h-13 rounded-full object-cover border transition-colors ${
-                        blocked
-                          ? 'border-rose-600/60 grayscale'
-                          : 'border-purple-600/40 group-hover:border-pink-500'
-                      }`}
-                    />
+                    {thread.friend.avatar ? (
+                      <img
+                        src={thread.friend.avatar}
+                        alt={thread.friend.name}
+                        referrerPolicy="no-referrer"
+                        className={`w-13 h-13 rounded-full object-cover border transition-colors ${
+                          blocked
+                            ? 'border-rose-600/60 grayscale'
+                            : 'border-purple-600/40 group-hover:border-pink-500'
+                        }`}
+                      />
+                    ) : (
+                      <div className={`w-13 h-13 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 font-bold font-mono text-base border ${
+                        blocked ? 'border-rose-600/60 grayscale' : 'border-purple-600/40'
+                      }`}>
+                        {thread.friend.name ? thread.friend.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span
                       className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#090714] ${
                         blocked

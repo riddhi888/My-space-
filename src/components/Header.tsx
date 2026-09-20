@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bell, Sparkles, Layers } from 'lucide-react';
 import { TabType, UserProfile } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   currentTab: TabType;
@@ -47,6 +48,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Clean, Compact Right Controls */}
         <div className="flex items-center gap-2">
+          {/* PWA Install Button */}
+          <PWAInstallButton variant="compact" />
+
           {/* Notifications Bell */}
           <button
             id="notifications-toggle-btn"

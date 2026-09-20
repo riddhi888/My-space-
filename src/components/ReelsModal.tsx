@@ -65,13 +65,15 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
       {/* Mobile container */}
       <div className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-purple-800/40 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
         {/* Background Image / Reel frame simulation */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={currentReel.videoThumbnail}
-            alt={currentReel.caption}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter brightness-90"
-          />
+        <div className="absolute inset-0 z-0 bg-purple-950">
+          {currentReel.videoThumbnail ? (
+            <img
+              src={currentReel.videoThumbnail}
+              alt={currentReel.caption}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover filter brightness-90"
+            />
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-black/60 pointer-events-none" />
         </div>
 
@@ -180,12 +182,18 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
         <div className="relative z-10 p-4 pb-6 bg-gradient-to-t from-black via-black/80 to-transparent">
           {/* Creator info */}
           <div className="flex items-center gap-3 mb-2.5">
-            <img
-              src={currentReel.creator.avatar}
-              alt={currentReel.creator.name}
-              referrerPolicy="no-referrer"
-              className="w-10 h-10 rounded-full border-2 border-pink-500 object-cover"
-            />
+            {currentReel.creator.avatar ? (
+              <img
+                src={currentReel.creator.avatar}
+                alt={currentReel.creator.name}
+                referrerPolicy="no-referrer"
+                className="w-10 h-10 rounded-full border-2 border-pink-500 object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full border-2 border-pink-500 bg-purple-950 flex items-center justify-center text-pink-400 font-bold font-mono text-xs">
+                {currentReel.creator.name ? currentReel.creator.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-semibold text-white text-sm">

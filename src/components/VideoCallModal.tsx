@@ -191,12 +191,18 @@ export const VideoCallModal: React.FC<VideoCallModalProps> = ({
               <div className="absolute -inset-3 rounded-full border border-cyan-400/40 animate-ping opacity-30" />
 
               <div className="relative p-2 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-[0_0_50px_rgba(236,72,153,0.5)]">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  referrerPolicy="no-referrer"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-[#090714]"
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    referrerPolicy="no-referrer"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-[#090714]"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-purple-950 border-4 border-[#090714] flex items-center justify-center text-pink-400 font-bold font-mono text-4xl">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 {user.isOnline && (
                   <span className="absolute bottom-2 right-2 w-5 h-5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_10px_#34d399]" />
                 )}

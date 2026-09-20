@@ -373,12 +373,18 @@ export const SocialView: React.FC<SocialViewProps> = ({
             <div className="p-4 rounded-3xl bg-gradient-to-br from-[#181132] to-[#0e0921] border border-purple-800/40 shadow-[0_0_20px_rgba(168,85,247,0.15)] space-y-3">
               <form onSubmit={handleCreatePost}>
                 <div className="flex gap-3">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    referrerPolicy="no-referrer"
-                    className="w-10 h-10 rounded-full object-cover border-2 border-pink-500 shrink-0"
-                  />
+                  {currentUser.avatar ? (
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-pink-500 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border-2 border-pink-500 shrink-0 text-sm font-bold font-mono">
+                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <div className="flex-1 space-y-2">
                     <textarea
                       id="social-composer-input"
@@ -390,7 +396,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                     />
 
                     {/* Attached Image Preview */}
-                    {attachedImage && (
+                    {attachedImage ? (
                       <div className="relative inline-block rounded-2xl overflow-hidden border border-purple-700/60 shadow-lg">
                         <img
                           src={attachedImage}
@@ -406,7 +412,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -491,12 +497,18 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   {/* Post Author Header */}
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        referrerPolicy="no-referrer"
-                        className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
-                      />
+                      {post.author.avatar ? (
+                        <img
+                          src={post.author.avatar}
+                          alt={post.author.name}
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border border-pink-500/40 text-xs font-bold font-mono">
+                          {post.author.name ? post.author.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h4 className="font-semibold text-sm text-white">
@@ -536,7 +548,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   </div>
 
                   {/* Post Image Media */}
-                  {post.image && (
+                  {post.image ? (
                     <div className="w-full max-h-96 overflow-hidden bg-black/40">
                       <img
                         src={post.image}
@@ -545,7 +557,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                         className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300"
                       />
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Post Actions Bar */}
                   <div className="p-4 pt-3 flex items-center justify-between border-t border-purple-900/30">
@@ -608,12 +620,18 @@ export const SocialView: React.FC<SocialViewProps> = ({
                               key={comment.id}
                               className="flex items-start gap-2.5 text-xs bg-[#0b0818] p-2.5 rounded-2xl border border-purple-900/40"
                             >
-                              <img
-                                src={comment.avatar}
-                                alt={comment.user}
-                                referrerPolicy="no-referrer"
-                                className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
-                              />
+                              {comment.avatar ? (
+                                <img
+                                  src={comment.avatar}
+                                  alt={comment.user}
+                                  referrerPolicy="no-referrer"
+                                  className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 shrink-0 mt-0.5 text-[9px] font-bold font-mono">
+                                  {comment.user ? comment.user.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                              )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
                                   <span className="font-semibold text-pink-300">
@@ -755,11 +773,17 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   Video / Thumbnail
                 </label>
                 <div className="relative rounded-2xl overflow-hidden aspect-[9/12] bg-purple-950/40 border border-purple-800/50 max-h-56 mx-auto flex items-center justify-center">
-                  <img
-                    src={reelMediaUrl}
-                    alt="Reel preview"
-                    className="w-full h-full object-cover"
-                  />
+                  {reelMediaUrl ? (
+                    <img
+                      src={reelMediaUrl}
+                      alt="Reel preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
+                      No Media Selected
+                    </div>
+                  )}
                   <input
                     type="file"
                     ref={reelFileInputRef}

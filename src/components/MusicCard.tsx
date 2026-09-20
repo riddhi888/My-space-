@@ -47,7 +47,7 @@ export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
           title="Open Music Player"
         >
           <img
-            src={currentTrack.cover}
+            src={currentTrack.cover || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80'}
             alt={currentTrack.title}
             referrerPolicy="no-referrer"
             className={`w-full h-full object-cover transition-transform duration-700 ${

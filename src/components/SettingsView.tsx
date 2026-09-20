@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, UserSettings, BlockedUser, ChatThread, AppTheme } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface SettingsViewProps {
   user: UserProfile;
@@ -330,12 +331,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {/* Current Avatar preview */}
               <div className="relative group shrink-0">
                 <div className="w-18 h-18 rounded-2xl p-0.5 bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_18px_rgba(236,72,153,0.4)] overflow-hidden">
-                  <img
-                    src={customAvatarUrl || avatar}
-                    alt="Avatar preview"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover rounded-[14px]"
-                  />
+                  {(customAvatarUrl || avatar) ? (
+                    <img
+                      src={customAvatarUrl || avatar}
+                      alt="Avatar preview"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover rounded-[14px]"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-purple-950 flex items-center justify-center text-pink-400 rounded-[14px]">
+                      <User className="w-8 h-8" />
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1098,12 +1105,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="p-3 rounded-2xl bg-purple-950/30 border border-purple-900/40 flex items-center justify-between gap-3 hover:border-rose-900/60 transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src={blocked.avatar}
-                      alt={blocked.name}
-                      referrerPolicy="no-referrer"
-                      className="w-9 h-9 rounded-full object-cover border border-rose-500/40 shrink-0"
-                    />
+                    {blocked.avatar ? (
+                      <img
+                        src={blocked.avatar}
+                        alt={blocked.name}
+                        referrerPolicy="no-referrer"
+                        className="w-9 h-9 rounded-full object-cover border border-rose-500/40 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border border-rose-500/40 shrink-0 text-xs font-bold font-mono">
+                        {blocked.name ? blocked.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="text-xs font-bold text-white truncate">{blocked.name}</span>
@@ -1198,12 +1211,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-900/30 flex items-center justify-between gap-2"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <img
-                          src={thread.friend.avatar}
-                          alt={thread.friend.name}
-                          referrerPolicy="no-referrer"
-                          className="w-7 h-7 rounded-full object-cover shrink-0"
-                        />
+                        {thread.friend.avatar ? (
+                          <img
+                            src={thread.friend.avatar}
+                            alt={thread.friend.name}
+                            referrerPolicy="no-referrer"
+                            className="w-7 h-7 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 shrink-0 text-[10px] font-bold font-mono">
+                            {thread.friend.name ? thread.friend.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="text-xs font-medium text-white truncate">{thread.friend.name}</p>
                           <p className="text-[10px] text-slate-400 truncate">
@@ -1262,12 +1281,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-800/30 text-xs space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  referrerPolicy="no-referrer"
-                  className="w-9 h-9 rounded-full object-cover border border-purple-600"
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    referrerPolicy="no-referrer"
+                    className="w-9 h-9 rounded-full object-cover border border-purple-600"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border border-purple-600 text-xs font-bold font-mono">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div>
                   <div className="text-xs font-bold text-white">{user.name}</div>
                   <div className="text-[10px] text-slate-400 font-mono">{user.handle}</div>
@@ -1396,6 +1421,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Manage Connected Apps</span>
           </button>
+        </div>
+
+        {/* PWA App Installation Section */}
+        <div className="space-y-2">
+          <PWAInstallButton variant="full" />
         </div>
 
         {/* About MySpace Section */}

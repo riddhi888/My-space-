@@ -288,12 +288,18 @@ export const Top8FriendsManager: React.FC<Top8FriendsManagerProps> = ({
                     : 'bg-gradient-to-tr from-pink-500 to-cyan-400'
                 }`}
               >
-                <img
-                  src={friend.avatar}
-                  alt={friend.name}
-                  referrerPolicy="no-referrer"
-                  className="w-11 h-11 rounded-full object-cover border-2 border-[#090714] group-hover:brightness-110"
-                />
+                {friend.avatar ? (
+                  <img
+                    src={friend.avatar}
+                    alt={friend.name}
+                    referrerPolicy="no-referrer"
+                    className="w-11 h-11 rounded-full object-cover border-2 border-[#090714] group-hover:brightness-110"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-purple-950 border-2 border-[#090714] flex items-center justify-center text-pink-400 text-xs font-bold font-mono">
+                    {friend.name ? friend.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 {friend.isOnline && (
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_6px_#34d399]" />
                 )}
@@ -358,11 +364,18 @@ export const Top8FriendsManager: React.FC<Top8FriendsManagerProps> = ({
           <div className="w-full max-w-xs rounded-2xl bg-[#130b26] border-2 border-pink-500/60 p-3.5 space-y-3 shadow-[0_0_25px_rgba(236,72,153,0.35)] text-xs">
             <div className="flex items-center justify-between border-b border-purple-800/50 pb-2">
               <div className="flex items-center gap-2">
-                <img
-                  src={editingFriend.friend.avatar}
-                  alt={editingFriend.friend.name}
-                  className="w-7 h-7 rounded-full object-cover border border-pink-400"
-                />
+                {editingFriend.friend.avatar ? (
+                  <img
+                    src={editingFriend.friend.avatar}
+                    alt={editingFriend.friend.name}
+                    referrerPolicy="no-referrer"
+                    className="w-7 h-7 rounded-full object-cover border border-pink-400"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 text-[10px] font-bold font-mono border border-pink-400">
+                    {editingFriend.friend.name ? editingFriend.friend.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-bold text-white text-xs">
                     Edit Caption for {editingFriend.friend.name.split(' ')[0]}

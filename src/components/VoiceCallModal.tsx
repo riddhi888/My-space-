@@ -81,12 +81,18 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
           )}
 
           <div className="relative p-1.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-[0_0_35px_rgba(236,72,153,0.6)]">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              referrerPolicy="no-referrer"
-              className="w-28 h-28 rounded-full object-cover border-4 border-[#0e0924]"
-            />
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                referrerPolicy="no-referrer"
+                className="w-28 h-28 rounded-full object-cover border-4 border-[#0e0924]"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-purple-950 border-4 border-[#0e0924] flex items-center justify-center text-pink-400 font-bold font-mono text-3xl">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
             {user.isOnline && (
               <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-[#0e0924] shadow-[0_0_10px_#34d399]" />
             )}

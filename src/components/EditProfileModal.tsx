@@ -644,12 +644,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               <div className="p-3 rounded-2xl bg-[#090714] border border-purple-900/50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(236,72,153,0.4)]">
-                    <img
-                      src={avatar}
-                      alt="Avatar Preview"
-                      referrerPolicy="no-referrer"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-[#090714]"
-                    />
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="Avatar Preview"
+                        referrerPolicy="no-referrer"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-[#090714]"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-purple-950 border-2 border-[#090714] flex items-center justify-center text-pink-400">
+                        <User className="w-8 h-8" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white">Current Profile Picture</h4>
@@ -883,12 +889,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 {/* Avatar & Info */}
                 <div className="px-3.5 pb-4 -mt-8 relative z-10 space-y-2">
                   <div className="relative w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-cyan-400 shadow-[0_0_20px_rgba(236,72,153,0.5)]">
-                    <img
-                      src={avatar}
-                      alt={name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full rounded-full object-cover border-2 border-[#090714]"
-                    />
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt={name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full rounded-full object-cover border-2 border-[#090714]"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-purple-950 border-2 border-[#090714] flex items-center justify-center text-pink-400">
+                        <User className="w-8 h-8" />
+                      </div>
+                    )}
                     <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
                   </div>
 

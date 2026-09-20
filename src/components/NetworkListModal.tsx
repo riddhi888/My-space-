@@ -120,12 +120,18 @@ export const NetworkListModal: React.FC<NetworkListModalProps> = ({
                   className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
                 >
                   <div className="relative shrink-0">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      referrerPolicy="no-referrer"
-                      className="w-11 h-11 rounded-full object-cover border-2 border-purple-500/40 group-hover:border-pink-500 transition-colors"
-                    />
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        referrerPolicy="no-referrer"
+                        className="w-11 h-11 rounded-full object-cover border-2 border-purple-500/40 group-hover:border-pink-500 transition-colors"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-purple-950 border-2 border-purple-500/40 flex items-center justify-center text-pink-400 font-bold font-mono text-xs">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                     <span
                       className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0e0a22] ${
                         user.isOnline

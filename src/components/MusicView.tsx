@@ -40,6 +40,8 @@ import {
   ExternalMusicPlatform,
 } from '../data/musicData';
 
+const FALLBACK_MUSIC_COVER = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80';
+
 interface MusicViewProps {
   onBackToHome?: () => void;
 }
@@ -363,7 +365,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
           {/* Vinyl Album Artwork */}
           <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden shrink-0 border-2 border-pink-500/40 shadow-[0_0_25px_rgba(236,72,153,0.35)] group">
             <img
-              src={currentTrack.cover}
+              src={currentTrack.cover || FALLBACK_MUSIC_COVER}
               alt={currentTrack.title}
               referrerPolicy="no-referrer"
               className={`w-full h-full object-cover transition-transform duration-700 ${
@@ -691,7 +693,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
               >
                 {/* Background artwork with subtle tint */}
                 <img
-                  src={cat.cover}
+                  src={cat.cover || FALLBACK_MUSIC_COVER}
                   alt={cat.name}
                   referrerPolicy="no-referrer"
                   className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 group-hover:scale-105 transition-all duration-500"
@@ -784,7 +786,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl overflow-hidden border border-pink-500/40 shrink-0">
                 <img
-                  src={selectedPlaylist.cover || tracks[0]?.cover || ''}
+                  src={selectedPlaylist.cover || tracks[0]?.cover || FALLBACK_MUSIC_COVER}
                   alt={selectedPlaylist.name}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
@@ -876,7 +878,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
                       onClick={() => playTrack(track)}
                     >
                       <img
-                        src={track.cover}
+                        src={track.cover || FALLBACK_MUSIC_COVER}
                         alt={track.title}
                         referrerPolicy="no-referrer"
                         className="w-10 h-10 rounded-xl object-cover"
@@ -949,7 +951,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-xl overflow-hidden border border-purple-700/50 shrink-0 group-hover:scale-105 transition-transform">
                     <img
-                      src={playlist.cover || tracks[0]?.cover || ''}
+                      src={playlist.cover || tracks[0]?.cover || FALLBACK_MUSIC_COVER}
                       alt={playlist.name}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
@@ -1071,7 +1073,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
                         className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-purple-700/50 shadow-md cursor-pointer group-hover:shadow-[0_0_12px_rgba(236,72,153,0.4)]"
                       >
                         <img
-                          src={track.cover}
+                          src={track.cover || FALLBACK_MUSIC_COVER}
                           alt={track.title}
                           referrerPolicy="no-referrer"
                           className={`w-full h-full object-cover transition-transform duration-500 ${
@@ -1425,7 +1427,7 @@ export const MusicView: React.FC<MusicViewProps> = ({ onBackToHome }) => {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <img
-                  src={unplayableModalTrack.cover}
+                  src={unplayableModalTrack.cover || FALLBACK_MUSIC_COVER}
                   alt={unplayableModalTrack.title}
                   referrerPolicy="no-referrer"
                   className="w-12 h-12 rounded-xl object-cover border border-purple-700"

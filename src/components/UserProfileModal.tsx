@@ -95,12 +95,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       <div className="relative w-full max-w-md bg-[#0c081e] border border-purple-800/40 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(168,85,247,0.3)] flex flex-col max-h-[90vh]">
         {/* Cover Banner */}
         <div className="relative h-36 w-full overflow-hidden bg-purple-950 shrink-0">
-          <img
-            src={user.coverImage}
-            alt="Profile Cover"
-            referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover ${isBlocked ? 'grayscale' : ''}`}
-          />
+          {user.coverImage ? (
+            <img
+              src={user.coverImage}
+              alt="Profile Cover"
+              referrerPolicy="no-referrer"
+              className={`w-full h-full object-cover ${isBlocked ? 'grayscale' : ''}`}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-purple-950 via-[#180f33] to-pink-950" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c081e] via-black/20 to-black/50" />
 
           {/* Top Bar Actions */}
@@ -167,14 +171,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     : 'bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(236,72,153,0.4)]'
                 }`}
               >
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  referrerPolicy="no-referrer"
-                  className={`w-full h-full object-cover rounded-[14px] bg-[#0c081e] ${
-                    isBlocked ? 'grayscale' : ''
-                  }`}
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    referrerPolicy="no-referrer"
+                    className={`w-full h-full object-cover rounded-[14px] bg-[#0c081e] ${
+                      isBlocked ? 'grayscale' : ''
+                    }`}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#0c081e] rounded-[14px] flex items-center justify-center text-pink-400 text-lg font-bold font-mono">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
               </div>
               {/* Online Indicator */}
               {!isBlocked && (
