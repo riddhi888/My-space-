@@ -52,6 +52,7 @@ import { ConnectedAppsView } from './components/ConnectedAppsView';
 import { LoginScreen } from './components/LoginScreen';
 import { EditProfileModal } from './components/EditProfileModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { shareReel } from './utils/reelsHelper';
 
 const getInitialProfile = (): UserProfile => {
   try {
@@ -438,7 +439,11 @@ export default function App() {
   };
 
   const handleShareReelFromModal = (reel: Reel) => {
-    handleOpenShareLink('instagram', `https://myspace.app/reels/${reel.id}`);
+    const reelLink =
+      reel.videoUrl ||
+      reel.externalUrl ||
+      `https://myspace.app/reels/${reel.id}`;
+    shareReel(reelLink);
   };
 
   // HANDLERS

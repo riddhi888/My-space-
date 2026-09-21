@@ -131,6 +131,9 @@ export interface Reel {
     avatar: string;
   };
   videoThumbnail: string;
+  videoUrl?: string;
+  externalUrl?: string;
+  platform?: 'youtube' | 'instagram' | 'facebook' | 'native';
   caption: string;
   audioTrack: string;
   likes: string;

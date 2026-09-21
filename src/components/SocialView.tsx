@@ -19,6 +19,7 @@ import {
   Upload,
   Plus,
   Radio,
+  Flame,
 } from 'lucide-react';
 import { SocialPost, SocialUser, Friend, UserProfile, Reel } from '../types';
 import { DiscoverPeopleView } from './DiscoverPeopleView';
@@ -338,15 +339,27 @@ export const SocialView: React.FC<SocialViewProps> = ({
                 <p className="text-xs text-slate-400">Stream from MySpace & Connected Hubs</p>
               </div>
 
-              {/* Create Reel Quick Action */}
-              <button
-                id="open-create-reel-btn"
-                onClick={() => setIsCreateReelOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-bold shadow-md shadow-fuchsia-500/30 flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer"
-              >
-                <Film className="w-3.5 h-3.5" />
-                <span>Create Reel</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {onOpenReels && (
+                  <button
+                    id="open-watch-reels-btn"
+                    onClick={onOpenReels}
+                    className="px-3 py-1.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-pink-300 border border-purple-700/50 text-xs font-bold flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer shadow-sm"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-pink-400" />
+                    <span>Watch Reels</span>
+                  </button>
+                )}
+                {/* Create Reel Quick Action */}
+                <button
+                  id="open-create-reel-btn"
+                  onClick={() => setIsCreateReelOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-xs font-bold shadow-md shadow-fuchsia-500/30 flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer"
+                >
+                  <Film className="w-3.5 h-3.5" />
+                  <span>Create Reel</span>
+                </button>
+              </div>
             </div>
 
             {/* Source Filter Tabs */}

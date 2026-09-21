@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, Flame, ArrowLeft } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, Flame, ArrowLeft, ExternalLink, Play } from 'lucide-react';
 import { Reel } from '../types';
+import { shareReel, openReels, extractYouTubeId } from '../utils/reelsHelper';
 
 interface ReelsModalProps {
   isOpen: boolean;
@@ -52,29 +53,101 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
     setCurrentIndex((prev) => (prev - 1 + reels.length) % reels.length);
   };
 
-  const handleShareClick = () => {
+  const handleShareClick = async () => {
+    const reelLink =
+      currentReel.videoUrl ||
+      currentReel.externalUrl ||
+      `https://myspace.app/reels/${currentReel.id}`;
+
+    await shareReel(reelLink);
+
     if (onShareReel) {
       onShareReel(currentReel);
-    } else {
-      alert(`Copied reel link: https://myspace.app/reels/${currentReel.id}`);
     }
   };
+
+  const shortsId = extractYouTubeId(currentReel.videoUrl || currentReel.externalUrl || '');
+  const isYouTubeShorts = currentReel.platform === 'youtube' || Boolean(shortsId);
+  const isInsta = currentReel.platform === 'instagram';
+  const isFB = currentReel.platform === 'facebook';
+  const reelExternalUrl = currentReel.externalUrl || currentReel.videoUrl || '';
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-0 sm:p-4">
       {/* Mobile container */}
       <div className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-purple-800/40 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
-        {/* Background Image / Reel frame simulation */}
-        <div className="absolute inset-0 z-0 bg-purple-950">
-          {currentReel.videoThumbnail ? (
-            <img
-              src={currentReel.videoThumbnail}
-              alt={currentReel.caption}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover filter brightness-90"
-            />
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-black/60 pointer-events-none" />
+        {/* Main Reel Viewport: YouTube Shorts Iframe OR Insta/FB Launcher OR Video Simulation */}
+        <div className="absolute inset-0 z-0 bg-black flex items-center justify-center">
+          {isYouTubeShorts && shortsId ? (
+            /* YouTube Shorts - direct cholbe */
+            <div className="w-full h-full bg-black flex items-center justify-center">
+              <iframe
+                src={`https://www.youtube.com/embed/${shortsId}?autoplay=1&controls=1&rel=0&playsinline=1&loop=1&playlist=${shortsId}`}
+                title={currentReel.caption}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="w-full h-full border-0"
+                id={`shorts-iframe-${currentReel.id}`}
+              />
+            </div>
+          ) : isInsta || isFB ? (
+            /* Insta / FB er jonno - click korle app e khulbe */
+            <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
+              {currentReel.videoThumbnail && (
+                <img
+                  src={currentReel.videoThumbnail}
+                  alt={currentReel.caption}
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-40 blur-sm scale-105"
+                />
+              )}
+              <div className="relative z-10 max-w-xs w-full mx-4 p-5 rounded-2xl bg-slate-900/90 border border-pink-500/40 text-center shadow-2xl backdrop-blur-md">
+                <div className="relative w-20 h-20 mx-auto mb-3 rounded-2xl overflow-hidden border-2 border-pink-500/50 shadow-lg">
+                  <img
+                    src={currentReel.videoThumbnail}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                  <span className={`absolute bottom-0 inset-x-0 py-0.5 text-[9px] font-black uppercase text-white ${
+                    isInsta ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-blue-600'
+                  }`}>
+                    {isInsta ? 'Instagram' : 'Facebook'}
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1 line-clamp-2">
+                  {currentReel.caption}
+                </h4>
+                <p className="text-xs text-pink-300 font-mono mb-4">
+                  {currentReel.creator.handle}
+                </p>
+                <button
+                  id={`open-app-btn-${currentReel.id}`}
+                  onClick={() => openReels(reelExternalUrl || (isInsta ? 'https://instagram.com/reels' : 'https://facebook.com/reel'))}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-2 shadow-lg transition active:scale-95 cursor-pointer ${
+                    isInsta
+                      ? 'bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:opacity-90 shadow-pink-600/30'
+                      : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/30'
+                  }`}
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open in {isInsta ? 'Instagram' : 'Facebook'} App</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Default simulated reel */
+            <div className="relative w-full h-full">
+              {currentReel.videoThumbnail ? (
+                <img
+                  src={currentReel.videoThumbnail}
+                  alt={currentReel.caption}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover filter brightness-90"
+                />
+              ) : null}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-black/60 pointer-events-none" />
+            </div>
+          )}
         </div>
 
         {/* Top Header Controls */}
