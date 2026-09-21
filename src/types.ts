@@ -108,6 +108,8 @@ export interface SocialPost {
   source: 'Instagram' | 'Facebook' | 'MySpace';
   content: string;
   image?: string;
+  embedUrl?: string;
+  mediaType?: 'image' | 'video' | 'embed' | 'reel';
   timestamp: string;
   likes: number;
   isLiked?: boolean;

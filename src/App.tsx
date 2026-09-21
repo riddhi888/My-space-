@@ -161,9 +161,10 @@ export default function App() {
     AccountService.getSavedChats(activeAccount?.id || 'user_local')
   );
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(() =>
-    AccountService.getSavedPosts(activeAccount?.id || 'user_local')
-  );
+  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(() => {
+    const saved = AccountService.getSavedPosts(activeAccount?.id || 'user_local');
+    return saved && saved.length > 0 ? saved : mockSocialPosts;
+  });
   const [reels, setReels] = useState<Reel[]>(mockReels);
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
     AccountService.getSavedNotifications(activeAccount?.id || 'user_local')
@@ -173,6 +174,7 @@ export default function App() {
   // Modals state
   const [isReelsOpen, setIsReelsOpen] = useState(false);
   const [selectedReelIndex, setSelectedReelIndex] = useState(0);
+  const [reelsInitialPlatform, setReelsInitialPlatform] = useState<'all' | 'youtube' | 'instagram' | 'facebook'>('all');
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [selectedStoryFriend, setSelectedStoryFriend] = useState<Friend | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -433,8 +435,12 @@ export default function App() {
     );
   };
 
-  const handleOpenReels = (index: number = 0) => {
+  const handleOpenReels = (
+    index: number = 0,
+    platform: 'all' | 'youtube' | 'instagram' | 'facebook' = 'all'
+  ) => {
     setSelectedReelIndex(index);
+    setReelsInitialPlatform(platform);
     setIsReelsOpen(true);
   };
 
@@ -946,7 +952,7 @@ export default function App() {
               onAddComment={handleAddComment}
               onCreatePost={handleCreatePost}
               onCreateReel={handleCreateReel}
-              onOpenReels={() => setIsReelsOpen(true)}
+              onOpenReels={(platform) => handleOpenReels(0, platform || 'youtube')}
               onToggleFollow={handleToggleFollow}
               onSelectUser={handleOpenSocialUserProfile}
               onOpenNetworkList={handleOpenNetworkList}
@@ -1049,6 +1055,7 @@ export default function App() {
           onClose={() => setIsReelsOpen(false)}
           reels={reels}
           initialReelIndex={selectedReelIndex}
+          initialPlatform={reelsInitialPlatform}
           onShareReel={handleShareReelFromModal}
         />
 

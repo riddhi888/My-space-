@@ -7,6 +7,7 @@ import {
   Sparkles,
   Instagram,
   Facebook,
+  Youtube,
   Image as ImageIcon,
   Camera,
   CheckCircle2,
@@ -20,10 +21,19 @@ import {
   Plus,
   Radio,
   Flame,
+  Code,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { SocialPost, SocialUser, Friend, UserProfile, Reel } from '../types';
 import { DiscoverPeopleView } from './DiscoverPeopleView';
 import { FriendsListView } from './FriendsListView';
+import {
+  getInstagramEmbedUrl,
+  getInstagramEmbedCode,
+  getFacebookEmbedUrl,
+  extractYouTubeId,
+  getYouTubeEmbedUrl,
+} from '../utils/reelsHelper';
 
 interface SocialViewProps {
   posts: SocialPost[];
@@ -42,7 +52,7 @@ interface SocialViewProps {
   onStartVoiceCall: (user: SocialUser) => void;
   onStartVideoCall: (user: SocialUser) => void;
   onPlayGame: (user: SocialUser) => void;
-  onOpenReels?: () => void;
+  onOpenReels?: (platform?: 'all' | 'youtube' | 'instagram' | 'facebook') => void;
   initialSubTab?: 'discover' | 'friends' | 'feed';
 }
 
@@ -76,6 +86,11 @@ export const SocialView: React.FC<SocialViewProps> = ({
   // Media Attachment State
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // In-App Embed URL & Code viewer states
+  const [embedLinkInput, setEmbedLinkInput] = useState<string>('');
+  const [showEmbedInput, setShowEmbedInput] = useState<boolean>(false);
+  const [expandedEmbedPostId, setExpandedEmbedPostId] = useState<string | null>(null);
 
   // Live Camera Capture State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -117,9 +132,19 @@ export const SocialView: React.FC<SocialViewProps> = ({
     };
   };
 
-  const filteredPosts = posts.filter(
-    (p) => activeFilter === 'All' || p.source === activeFilter
-  );
+  const filteredPosts = posts.filter((p) => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'Instagram') {
+      return p.source === 'Instagram' || Boolean(p.embedUrl?.includes('instagram.com'));
+    }
+    if (activeFilter === 'Facebook') {
+      return p.source === 'Facebook' || Boolean(p.embedUrl?.includes('facebook.com'));
+    }
+    if (activeFilter === 'MySpace') {
+      return p.source === 'MySpace';
+    }
+    return true;
+  });
 
   // File Upload Handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +207,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPostText.trim() && !attachedImage) return;
+    if (!newPostText.trim() && !attachedImage && !embedLinkInput.trim()) return;
 
     onCreatePost({
       author: {
@@ -194,11 +219,15 @@ export const SocialView: React.FC<SocialViewProps> = ({
       source: selectedSource,
       content: newPostText.trim(),
       image: attachedImage || undefined,
+      embedUrl: embedLinkInput.trim() || undefined,
+      mediaType: embedLinkInput.trim() ? 'embed' : attachedImage ? 'image' : undefined,
       tags: ['#MySpaceNeon', '#CyberVibe'],
     });
 
     setNewPostText('');
     setAttachedImage(null);
+    setEmbedLinkInput('');
+    setShowEmbedInput(false);
   };
 
   const handleReelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -343,10 +372,10 @@ export const SocialView: React.FC<SocialViewProps> = ({
                 {onOpenReels && (
                   <button
                     id="open-watch-reels-btn"
-                    onClick={onOpenReels}
-                    className="px-3 py-1.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-pink-300 border border-purple-700/50 text-xs font-bold flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer shadow-sm"
+                    onClick={() => onOpenReels('youtube')}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 via-purple-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white border border-red-500/40 text-xs font-bold flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer shadow-md shadow-red-600/30"
                   >
-                    <Flame className="w-3.5 h-3.5 text-pink-400" />
+                    <Youtube className="w-3.5 h-3.5 text-white" />
                     <span>Watch Reels</span>
                   </button>
                 )}
@@ -426,6 +455,40 @@ export const SocialView: React.FC<SocialViewProps> = ({
                         </button>
                       </div>
                     ) : null}
+
+                    {/* Attached Embed URL Input */}
+                    {showEmbedInput && (
+                      <div className="relative mt-2 p-2.5 rounded-2xl bg-black/60 border border-pink-500/40 space-y-1.5 animate-in fade-in">
+                        <div className="flex items-center justify-between text-[11px] text-pink-300 font-semibold">
+                          <span className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3 text-pink-400" />
+                            Attach Reel or Short Embed Link
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowEmbedInput(false);
+                              setEmbedLinkInput('');
+                            }}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={embedLinkInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEmbedLinkInput(val);
+                            if (val.includes('instagram.com')) setSelectedSource('Instagram');
+                            else if (val.includes('facebook.com')) setSelectedSource('Facebook');
+                          }}
+                          placeholder="Paste reel link (e.g. instagram.com/reel/ID or facebook.com/reel/ID)..."
+                          className="w-full bg-purple-950/40 border border-purple-800/40 rounded-xl px-2.5 py-1.5 text-xs text-pink-200 placeholder-slate-500 focus:outline-none focus:border-pink-400 font-mono"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -463,6 +526,22 @@ export const SocialView: React.FC<SocialViewProps> = ({
                       <span>Camera</span>
                     </button>
 
+                    {/* Attach Embed Link Button */}
+                    <button
+                      type="button"
+                      id="composer-embed-link-btn"
+                      onClick={() => setShowEmbedInput(!showEmbedInput)}
+                      className={`px-2.5 py-1.5 rounded-xl border text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                        showEmbedInput || embedLinkInput
+                          ? 'bg-pink-900/50 border-pink-500/60 text-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.3)]'
+                          : 'bg-purple-950/50 hover:bg-purple-900/60 border-purple-800/40 text-purple-300'
+                      }`}
+                      title="Attach Instagram/Facebook reel embed"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Embed</span>
+                    </button>
+
                     {/* Source Tag Selector */}
                     <div className="hidden sm:flex items-center gap-1 pl-2">
                       {(['MySpace', 'Instagram', 'Facebook'] as const).map((source) => (
@@ -486,7 +565,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   <button
                     id="submit-social-post-btn"
                     type="submit"
-                    disabled={!newPostText.trim() && !attachedImage}
+                    disabled={!newPostText.trim() && !attachedImage && !embedLinkInput.trim()}
                     className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold disabled:opacity-40 disabled:pointer-events-none shadow-[0_0_12px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform cursor-pointer"
                   >
                     Post Drop
@@ -498,79 +577,219 @@ export const SocialView: React.FC<SocialViewProps> = ({
 
           {/* Posts Stream */}
           <div className="px-4 space-y-4">
-            {filteredPosts.map((post) => {
-              const isCommentsOpen = activeCommentsPostId === post.id;
+            {filteredPosts.length === 0 ? (
+              <div className="p-8 rounded-3xl bg-[#110c26]/90 border border-purple-800/40 text-center space-y-3 shadow-lg">
+                <div className="w-12 h-12 rounded-full bg-purple-950 flex items-center justify-center mx-auto text-pink-400">
+                  {activeFilter === 'Instagram' ? (
+                    <Instagram className="w-6 h-6" />
+                  ) : activeFilter === 'Facebook' ? (
+                    <Facebook className="w-6 h-6" />
+                  ) : (
+                    <Sparkles className="w-6 h-6" />
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-white">
+                  No {activeFilter} embeds in your personal feed yet
+                </h3>
+                <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                  {activeFilter === 'Instagram'
+                    ? 'Watch full Instagram Reels in the Watch Reels player or paste an Instagram reel link above.'
+                    : activeFilter === 'Facebook'
+                    ? 'Watch Facebook video embeds in the Watch Reels player or paste a Facebook reel link above.'
+                    : 'Switch filters or create a new post to get the vibe flowing.'}
+                </p>
+                {onOpenReels && (
+                  <button
+                    onClick={() =>
+                      onOpenReels(
+                        activeFilter === 'Instagram'
+                          ? 'instagram'
+                          : activeFilter === 'Facebook'
+                          ? 'facebook'
+                          : 'youtube'
+                      )
+                    }
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white text-xs font-bold shadow-md hover:scale-105 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>Watch {activeFilter} Reels Fullscreen</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredPosts.map((post) => {
+                const isCommentsOpen = activeCommentsPostId === post.id;
+                const ytId = post.embedUrl ? extractYouTubeId(post.embedUrl) : null;
+                const isInstaEmbed = post.source === 'Instagram' || Boolean(post.embedUrl?.includes('instagram.com'));
+                const isFbEmbed = post.source === 'Facebook' || Boolean(post.embedUrl?.includes('facebook.com'));
 
-              return (
-                <div
-                  key={post.id}
-                  id={`post-${post.id}`}
-                  className="rounded-3xl bg-[#110c26]/90 border border-purple-800/40 overflow-hidden shadow-[0_0_25px_rgba(168,85,247,0.1)] transition-all hover:border-purple-700/50"
-                >
-                  {/* Post Author Header */}
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {post.author.avatar ? (
-                        <img
-                          src={post.author.avatar}
-                          alt={post.author.name}
-                          referrerPolicy="no-referrer"
-                          className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border border-pink-500/40 text-xs font-bold font-mono">
-                          {post.author.name ? post.author.name.charAt(0).toUpperCase() : 'U'}
+                return (
+                  <div
+                    key={post.id}
+                    id={`post-${post.id}`}
+                    className="rounded-3xl bg-[#110c26]/90 border border-purple-800/40 overflow-hidden shadow-[0_0_25px_rgba(168,85,247,0.1)] transition-all hover:border-purple-700/50"
+                  >
+                    {/* Post Author Header */}
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {post.author.avatar ? (
+                          <img
+                            src={post.author.avatar}
+                            alt={post.author.name}
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 border border-pink-500/40 text-xs font-bold font-mono">
+                            {post.author.name ? post.author.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-semibold text-sm text-white">
+                              {post.author.name}
+                            </h4>
+                            {post.author.verified && (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400">
+                            {post.author.handle} • {post.timestamp}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Platform Tag */}
+                      <div>{getSourceBadge(post.source)}</div>
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="px-4 pb-3">
+                      <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+                        {post.content}
+                      </p>
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {post.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-xs font-mono text-cyan-400 hover:text-cyan-300 cursor-pointer"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-semibold text-sm text-white">
-                            {post.author.name}
-                          </h4>
-                          {post.author.verified && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400">
-                          {post.author.handle} • {post.timestamp}
-                        </p>
-                      </div>
                     </div>
 
-                    {/* Platform Tag */}
-                    <div>{getSourceBadge(post.source)}</div>
-                  </div>
-
-                  {/* Post Content */}
-                  <div className="px-4 pb-3">
-                    <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-                      {post.content}
-                    </p>
-                    {post.tags && post.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {post.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-xs font-mono text-cyan-400 hover:text-cyan-300 cursor-pointer"
-                          >
-                            {tag}
+                    {/* Post Media: In-App Embeds OR Image */}
+                    {isInstaEmbed ? (
+                      /* Instagram In-App oEmbed */
+                      <div className="w-full bg-[#080512] border-y border-purple-900/40 relative">
+                        <div className="flex items-center justify-between px-4 py-2 bg-[#140b2a]/80 border-b border-purple-900/40 text-[11px] text-pink-300">
+                          <span className="flex items-center gap-1.5 font-bold">
+                            <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                            Instagram In-App Reel Embed
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedEmbedPostId(
+                                expandedEmbedPostId === post.id ? null : post.id
+                              )
+                            }
+                            className="text-[10px] text-slate-400 hover:text-cyan-300 font-mono flex items-center gap-1 cursor-pointer"
+                            title="Toggle embed snippet"
+                          >
+                            <Code className="w-3 h-3 text-cyan-400" />
+                            <span>
+                              {expandedEmbedPostId === post.id ? 'Hide Code' : 'Embed Code'}
+                            </span>
+                          </button>
+                        </div>
 
-                  {/* Post Image Media */}
-                  {post.image ? (
-                    <div className="w-full max-h-96 overflow-hidden bg-black/40">
-                      <img
-                        src={post.image}
-                        alt="Post media"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300"
-                      />
-                    </div>
-                  ) : null}
+                        {expandedEmbedPostId === post.id && (
+                          <div className="p-3 bg-black/90 border-b border-purple-900/40 text-xs font-mono text-cyan-300 space-y-1.5">
+                            <p className="text-[10px] text-slate-400 font-sans">
+                              Raw oEmbed HTML snippet:
+                            </p>
+                            <textarea
+                              readOnly
+                              value={getInstagramEmbedCode(
+                                post.embedUrl || 'https://www.instagram.com/reel/C3bL_5tI9Gf/'
+                              )}
+                              rows={2}
+                              className="w-full bg-purple-950/60 p-2 rounded-lg text-[10px] text-cyan-300 border border-purple-800/40 select-all"
+                            />
+                          </div>
+                        )}
+
+                        <div className="relative w-full aspect-[4/5] max-h-[480px] bg-black">
+                          <iframe
+                            src={getInstagramEmbedUrl(
+                              post.embedUrl || 'https://www.instagram.com/reel/C3bL_5tI9Gf/'
+                            )}
+                            title={post.content}
+                            className="w-full h-full border-0"
+                            allow="encrypted-media"
+                            scrolling="no"
+                          />
+                        </div>
+                      </div>
+                    ) : isFbEmbed ? (
+                      /* Facebook In-App Embedded Video Player */
+                      <div className="w-full bg-[#070b18] border-y border-blue-900/40 relative">
+                        <div className="flex items-center justify-between px-4 py-2 bg-[#0c142c]/80 border-b border-blue-900/40 text-[11px] text-blue-300">
+                          <span className="flex items-center gap-1.5 font-bold">
+                            <Facebook className="w-3.5 h-3.5 text-blue-400" />
+                            Facebook Embedded Video Player
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">In-App Player</span>
+                        </div>
+
+                        <div className="relative w-full aspect-video min-h-[260px] max-h-[380px] bg-black">
+                          <iframe
+                            src={getFacebookEmbedUrl(
+                              post.embedUrl || 'https://www.facebook.com/reel/729182948291024'
+                            )}
+                            title={post.content}
+                            className="w-full h-full border-0"
+                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    ) : ytId ? (
+                      /* YouTube Shorts Embed inside Post */
+                      <div className="w-full bg-black border-y border-red-900/40 relative">
+                        <div className="flex items-center justify-between px-4 py-2 bg-[#200a0a]/80 border-b border-red-900/40 text-[11px] text-red-300">
+                          <span className="flex items-center gap-1.5 font-bold">
+                            <Youtube className="w-3.5 h-3.5 text-red-400" />
+                            YouTube Shorts In-App Embed
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">Shorts Player</span>
+                        </div>
+
+                        <div className="relative w-full aspect-[9/16] max-h-[460px] bg-black">
+                          <iframe
+                            src={getYouTubeEmbedUrl(ytId, { autoplay: false, muted: false, loop: true })}
+                            title={post.content}
+                            className="w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    ) : post.image ? (
+                      <div className="w-full max-h-96 overflow-hidden bg-black/40">
+                        <img
+                          src={post.image}
+                          alt="Post media"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300"
+                        />
+                      </div>
+                    ) : null}
 
                   {/* Post Actions Bar */}
                   <div className="p-4 pt-3 flex items-center justify-between border-t border-purple-900/30">
@@ -692,7 +911,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   )}
                 </div>
               );
-            })}
+            }))}
           </div>
         </>
       )}
