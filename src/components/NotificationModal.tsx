@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Bell, Check, Heart, MessageSquare, Gamepad2, Sparkles, CheckCheck, UserPlus, UserX } from 'lucide-react';
+import { X, Bell, Check, Heart, MessageSquare, Gamepad2, Sparkles, CheckCheck } from 'lucide-react';
 import { NotificationItem } from '../types';
 
 interface NotificationModalProps {
@@ -8,8 +8,6 @@ interface NotificationModalProps {
   notifications: NotificationItem[];
   onMarkAllAsRead: () => void;
   onDismissNotification: (id: string) => void;
-  onAcceptFriendRequest?: (notificationId: string, requesterId?: string) => void;
-  onDeclineFriendRequest?: (notificationId: string, requesterId?: string) => void;
 }
 
 export const NotificationModal: React.FC<NotificationModalProps> = ({
@@ -18,15 +16,11 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   notifications,
   onMarkAllAsRead,
   onDismissNotification,
-  onAcceptFriendRequest,
-  onDeclineFriendRequest,
 }) => {
   if (!isOpen) return null;
 
   const getIcon = (type: NotificationItem['type']) => {
     switch (type) {
-      case 'friend_request':
-        return <UserPlus className="w-4 h-4 text-cyan-400" />;
       case 'like':
         return <Heart className="w-4 h-4 text-pink-400 fill-pink-500/20" />;
       case 'chat':
@@ -125,44 +119,6 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                   <p className="text-xs text-slate-300 mt-1 line-clamp-2 leading-relaxed">
                     {item.message}
                   </p>
-
-                  {/* Friend Request Interactive Action Buttons */}
-                  {item.type === 'friend_request' && (
-                    <div className="mt-2.5 flex items-center gap-2">
-                      {item.requestStatus === 'accepted' ? (
-                        <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Friends connected
-                        </span>
-                      ) : item.requestStatus === 'declined' ? (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded text-slate-400">
-                          Declined
-                        </span>
-                      ) : (
-                        <>
-                          <button
-                            id={`accept-friend-req-${item.id}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAcceptFriendRequest?.(item.id, item.requesterId);
-                            }}
-                            className="px-3 py-1 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white text-xs font-semibold shadow-[0_0_10px_rgba(236,72,153,0.3)] flex items-center gap-1"
-                          >
-                            <Check className="w-3 h-3" /> Accept
-                          </button>
-                          <button
-                            id={`decline-friend-req-${item.id}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeclineFriendRequest?.(item.id, item.requesterId);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-purple-950/60 border border-purple-800/40 hover:bg-purple-900 text-slate-300 hover:text-white text-xs"
-                          >
-                            Decline
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Unread indicator */}

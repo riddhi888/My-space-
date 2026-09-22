@@ -31,76 +31,12 @@
   box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.45);
 }
 
-.neon-glow-green {
-  box-shadow: 0 0 20px -3px rgba(34, 197, 94, 0.45);
-}
-
 .neon-border-gradient {
   background: linear-gradient(135deg, rgba(236, 72, 153, 0.6), rgba(168, 85, 247, 0.6), rgba(59, 130, 246, 0.6));
 }
 
 .neon-text-gradient {
   background: linear-gradient(135deg, #f472b6 0%, #c084fc 50%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* ================= THEME DEFINITIONS ================= */
-/* 1. Classic Blue (2008 MySpace iconic blue) */
-[data-theme="classic-blue"], body.theme-classic-blue {
-  background-color: #071224;
-  color: #e2e8f0;
-}
-[data-theme="classic-blue"] .app-main-frame {
-  background-color: #0b1a33;
-  border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: 0 0 60px rgba(37, 99, 235, 0.25);
-}
-[data-theme="classic-blue"] .neon-text-gradient {
-  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* 2. Emo Black Pink (2008 Scenecore hot pink & pitch black) */
-[data-theme="emo-black-pink"], body.theme-emo-black-pink {
-  background-color: #050106;
-  color: #fdf2f8;
-}
-[data-theme="emo-black-pink"] .app-main-frame {
-  background-color: #0e0312;
-  border-color: rgba(244, 63, 94, 0.45);
-  box-shadow: 0 0 60px rgba(255, 20, 147, 0.28);
-}
-[data-theme="emo-black-pink"] .neon-text-gradient {
-  background: linear-gradient(135deg, #fbcfe8 0%, #f43f5e 50%, #e11d48 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* 3. Vaporwave Purple (Retro synthwave violet, magenta & cyan) */
-[data-theme="vaporwave-purple"], body.theme-vaporwave-purple {
-  background-color: #090714;
-  color: #f1f5f9;
-}
-[data-theme="vaporwave-purple"] .app-main-frame {
-  background-color: #0b0818;
-  border-color: rgba(168, 85, 247, 0.3);
-  box-shadow: 0 0 60px rgba(168, 85, 247, 0.2);
-}
-
-/* 4. Matrix Green (2008 Cyber Terminal phosphor green) */
-[data-theme="matrix-green"], body.theme-matrix-green {
-  background-color: #020803;
-  color: #f0fdf4;
-}
-[data-theme="matrix-green"] .app-main-frame {
-  background-color: #041206;
-  border-color: rgba(34, 197, 94, 0.4);
-  box-shadow: 0 0 60px rgba(34, 197, 94, 0.25);
-}
-[data-theme="matrix-green"] .neon-text-gradient {
-  background: linear-gradient(135deg, #bbf7d0 0%, #4ade80 50%, #22c55e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

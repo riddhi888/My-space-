@@ -28,15 +28,13 @@ export const StoryModal: React.FC<StoryModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-0 sm:p-4">
       <div className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)]">
         {/* Background Image */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-950 via-[#0e0921] to-black">
-          {(friend.storyImage || friend.avatar) ? (
-            <img
-              src={friend.storyImage || friend.avatar}
-              alt={friend.name}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
-            />
-          ) : null}
+        <div className="absolute inset-0">
+          <img
+            src={friend.storyImage || friend.avatar}
+            alt={friend.name}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/70 pointer-events-none" />
         </div>
 
@@ -51,18 +49,12 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         <div className="relative z-10 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-r from-pink-500 to-cyan-400">
-              {friend.avatar ? (
-                <img
-                  src={friend.avatar}
-                  alt={friend.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <div className="w-full h-full bg-purple-950 rounded-full flex items-center justify-center text-pink-400 font-bold font-mono text-xs">
-                  {friend.name ? friend.name.charAt(0).toUpperCase() : 'U'}
-                </div>
-              )}
+              <img
+                src={friend.avatar}
+                alt={friend.name}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
