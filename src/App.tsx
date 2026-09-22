@@ -1,33 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
-  TabType,
-  Friend,
-  SocialPost,
-  SocialUser,
-  NotificationItem,
-  SharedLink,
-  Reel,
-  UserAccount,
-  ConnectedAppAccount,
-  ConnectedPlatform,
-  UserProfile,
-  UserSocialLinks,
-  ChatThread,
-} from './types';
+import { Sparkles } from 'lucide-react';
+import { TabType, Friend, SocialPost, MessageAttachment, UserProfile } from './types';
 import {
   currentUser as initialUser,
   onlineFriends as initialFriends,
+  allFriends,
   initialChatThreads,
   mockSocialPosts,
   mockReels,
   mockTracks,
   mockGames,
   mockNotifications,
-  mockSocialUsers,
-  mockSharedLinks,
+  demoUsers,
 } from './data/mockData';
-import { AccountService, SEED_ACCOUNTS } from './services/accountService';
-import { loadSocialLinksFromStorage, saveSocialLinksToStorage } from './components/SocialIcons';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { HomeView } from './components/HomeView';
@@ -35,422 +20,84 @@ import { ChatView } from './components/ChatView';
 import { SocialView } from './components/SocialView';
 import { GamesView } from './components/GamesView';
 import { ProfileView } from './components/ProfileView';
-import { MusicView } from './components/MusicView';
-import { MusicProvider } from './context/MusicContext';
 import { ReelsModal } from './components/ReelsModal';
 import { YouTubeModal } from './components/YouTubeModal';
 import { StoryModal } from './components/StoryModal';
 import { NotificationModal } from './components/NotificationModal';
-import { UserProfileModal } from './components/UserProfileModal';
-import { VoiceCallModal } from './components/VoiceCallModal';
-import { VideoCallModal } from './components/VideoCallModal';
-import { NetworkListModal } from './components/NetworkListModal';
-import { ShareLinkModal } from './components/ShareLinkModal';
-import { NotificationsView } from './components/NotificationsView';
-import { SettingsView } from './components/SettingsView';
-import { ConnectedAppsView } from './components/ConnectedAppsView';
-import { LoginScreen } from './components/LoginScreen';
-import { EditProfileModal } from './components/EditProfileModal';
-import { OfflineIndicator } from './components/OfflineIndicator';
-import { shareReel } from './utils/reelsHelper';
-
-const getInitialProfile = (): UserProfile => {
-  try {
-    const raw = localStorage.getItem('myspace_user');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.name && parsed.name.trim() && parsed.name !== 'Alex Rivera') {
-        const rawSocial = localStorage.getItem('socialLinks');
-        const socialLinks = rawSocial ? JSON.parse(rawSocial) : parsed.socialLinks || {};
-        return {
-          id: parsed.id || 'user_local',
-          name: parsed.name,
-          handle: parsed.handle || '',
-          avatar: parsed.avatar || '',
-          coverImage: parsed.coverImage || '',
-          bio: parsed.bio || '',
-          badges: parsed.badges || [],
-          profileSong: {
-            title: parsed.profileSong?.title || '',
-            artist: parsed.profileSong?.artist || '',
-            duration: parsed.profileSong?.duration || '',
-          },
-          top8Friends: parsed.top8Friends || [],
-          stats: {
-            friends: 0,
-            followers: '0',
-            views: '0',
-            posts: parsed.stats?.posts || 0,
-          },
-          socialLinks,
-        };
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to parse myspace_user', err);
-  }
-
-  // Clear any legacy demo data from localStorage
-  try {
-    const legacy = localStorage.getItem('myspace_user');
-    if (legacy && legacy.includes('Alex Rivera')) {
-      localStorage.removeItem('myspace_user');
-    }
-  } catch {}
-
-  return {
-    id: 'user_local',
-    name: '',
-    handle: '',
-    avatar: '',
-    coverImage: '',
-    bio: '',
-    badges: [],
-    profileSong: {
-      title: '',
-      artist: '',
-      duration: '',
-    },
-    top8Friends: [],
-    stats: {
-      friends: 0,
-      followers: '0',
-      views: '0',
-      posts: 0,
-    },
-    socialLinks: {
-      facebook: '',
-      youtube: '',
-      instagram: '',
-      spotify: '',
-    },
-  };
-};
-
-const createDefaultAccount = (profile: UserProfile): UserAccount => ({
-  id: profile.id || 'user_local',
-  email: `${(profile.handle || 'user').replace('@', '') || 'user'}@myspace.user`,
-  profile,
-  connectedApps: {
-    instagram: { platform: 'instagram', isConnected: false },
-    facebook: { platform: 'facebook', isConnected: false },
-    youtube: { platform: 'youtube', isConnected: false },
-  },
-  createdAt: new Date().toISOString(),
-});
+import { AuthView } from './components/AuthView';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState<UserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('myspace_registered_users');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return demoUsers;
+  });
+
   const [currentTab, setCurrentTab] = useState<TabType>('home');
-
-  // User-isolated state (starts empty from localStorage 'myspace_user')
-  const [user, setUser] = useState<UserProfile>(getInitialProfile);
-
-  // Account System State
-  const [activeAccount, setActiveAccount] = useState<UserAccount>(() => {
-    const existing = AccountService.getActiveAccount();
-    if (existing) return existing;
-    const initialProfile = getInitialProfile();
-    return createDefaultAccount(initialProfile);
-  });
-  const [isLoggedOut, setIsLoggedOut] = useState(false);
-
-  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
-  const [friends, setFriends] = useState<Friend[]>(initialFriends);
-  const [socialUsers, setSocialUsers] = useState<SocialUser[]>(mockSocialUsers);
-  const [chatThreads, setChatThreads] = useState<ChatThread[]>(() =>
-    AccountService.getSavedChats(activeAccount?.id || 'user_local')
-  );
+  const [user, setUser] = useState<UserProfile>(initialUser);
+  const [friends, setFriends] = useState(initialFriends);
+  const [chatThreads, setChatThreads] = useState(initialChatThreads);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(() => {
-    const saved = AccountService.getSavedPosts(activeAccount?.id || 'user_local');
-    return saved && saved.length > 0 ? saved : mockSocialPosts;
-  });
-  const [reels, setReels] = useState<Reel[]>(mockReels);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    AccountService.getSavedNotifications(activeAccount?.id || 'user_local')
-  );
-  const [sharedLinks, setSharedLinks] = useState<SharedLink[]>(mockSharedLinks);
+  const [socialPosts, setSocialPosts] = useState<SocialPost[]>(mockSocialPosts);
+  const [notifications, setNotifications] = useState(mockNotifications);
 
   // Modals state
   const [isReelsOpen, setIsReelsOpen] = useState(false);
-  const [selectedReelIndex, setSelectedReelIndex] = useState(0);
-  const [reelsInitialPlatform, setReelsInitialPlatform] = useState<'all' | 'youtube' | 'instagram' | 'facebook'>('all');
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [selectedStoryFriend, setSelectedStoryFriend] = useState<Friend | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareModalPlatform, setShareModalPlatform] = useState<'instagram' | 'facebook' | 'youtube' | 'custom'>('instagram');
-  const [shareModalUrl, setShareModalUrl] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Social & Call Modals State
-  const [selectedProfileUser, setSelectedProfileUser] = useState<SocialUser | null>(null);
-  const [isVoiceCallOpen, setIsVoiceCallOpen] = useState(false);
-  const [callUser, setCallUser] = useState<SocialUser | null>(null);
-  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
-  const [videoCallUser, setVideoCallUser] = useState<SocialUser | null>(null);
-  const [isNetworkListOpen, setIsNetworkListOpen] = useState(false);
-  const [networkListTab, setNetworkListTab] = useState<'followers' | 'following'>('following');
+  const showToast = (message: string) => {
+    setToastMessage(message);
+  };
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const handleRegisterUser = (newUser: UserProfile) => {
+    setRegisteredUsers((prev) => {
+      const updated = [newUser, ...prev];
+      try {
+        localStorage.setItem('myspace_registered_users', JSON.stringify(updated));
+      } catch (e) {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const handleLoginSuccess = (authenticatedUser: UserProfile, message?: string) => {
+    setUser(authenticatedUser);
+    setIsLoggedIn(true);
+    // Explicit requirement: After login, show the user's own MySpace profile
+    setCurrentTab('profile');
+    setActiveChatId(null);
+    if (message) {
+      showToast(message);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setActiveChatId(null);
+    showToast('Logged out of MySpace. Welcome back anytime!');
+  };
 
   // Unread counts
   const unreadChatCount = chatThreads.reduce((acc, t) => acc + t.unreadCount, 0);
   const unreadNotificationsCount = notifications.filter((n) => !n.isRead).length;
-
-  // Sync and apply 2008 retro theme
-  useEffect(() => {
-    const applyTheme = (themeName: string) => {
-      document.documentElement.setAttribute('data-theme', themeName);
-      document.body.className = `theme-${themeName}`;
-    };
-
-    try {
-      const savedTheme = localStorage.getItem('myspace_theme');
-      if (savedTheme) {
-        applyTheme(savedTheme);
-      } else {
-        const rawSettings = localStorage.getItem('myspace_user_settings_v1');
-        if (rawSettings) {
-          const parsed = JSON.parse(rawSettings);
-          if (parsed?.theme) {
-            applyTheme(parsed.theme);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Failed to restore theme', e);
-    }
-
-    const handleThemeEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<{ theme?: string }>;
-      if (customEvent.detail?.theme) {
-        applyTheme(customEvent.detail.theme);
-      }
-    };
-
-    window.addEventListener('myspace-theme-changed', handleThemeEvent);
-    return () => {
-      window.removeEventListener('myspace-theme-changed', handleThemeEvent);
-    };
-  }, []);
-
-  // Social/Friends System Handlers
-  const handleToggleFollow = (userId: string) => {
-    setSocialUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          const newFollowing = !u.isFollowing;
-          const updatedUser: SocialUser = {
-            ...u,
-            isFollowing: newFollowing,
-            followersCount: newFollowing ? u.followersCount + 1 : Math.max(0, u.followersCount - 1),
-          };
-
-          // Update active profile modal if viewing this user
-          if (selectedProfileUser?.id === userId) {
-            setSelectedProfileUser(updatedUser);
-          }
-
-          return updatedUser;
-        }
-        return u;
-      })
-    );
-
-    // Update current user's profile following count
-    setUser((prev) => {
-      const target = socialUsers.find((u) => u.id === userId);
-      const isNowFollowing = !target?.isFollowing;
-      const currentFollowing = prev.stats.friends || 842;
-      const updatedFollowing = isNowFollowing ? currentFollowing + 1 : Math.max(0, currentFollowing - 1);
-      return {
-        ...prev,
-        stats: {
-          ...prev.stats,
-          friends: updatedFollowing,
-        },
-      };
-    });
-  };
-
-  const handleSendFriendRequest = (userId: string) => {
-    setSocialUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          const updated = { ...u, friendRequestStatus: 'sent' as const };
-          if (selectedProfileUser?.id === userId) {
-            setSelectedProfileUser(updated);
-          }
-          return updated;
-        }
-        return u;
-      })
-    );
-
-    // Add confirmation notification
-    const target = socialUsers.find((u) => u.id === userId);
-    if (target) {
-      const newNotif: NotificationItem = {
-        id: `fr_sent_${Date.now()}`,
-        type: 'friend_request',
-        title: 'Friend Request Sent',
-        message: `Your friend invitation was dispatched to ${target.name} (${target.handle}).`,
-        time: 'Just now',
-        isRead: false,
-        avatar: target.avatar,
-      };
-      setNotifications((prev) => [newNotif, ...prev]);
-    }
-  };
-
-  const handleOpenSocialUserProfile = (userToView: SocialUser) => {
-    setSelectedProfileUser(userToView);
-  };
-
-  const handleStartVoiceCall = (userToCall: SocialUser) => {
-    setCallUser(userToCall);
-    setIsVoiceCallOpen(true);
-  };
-
-  const handleStartVideoCall = (userToCall: SocialUser) => {
-    setVideoCallUser(userToCall);
-    setIsVideoCallOpen(true);
-  };
-
-  const resolveFriendAsSocialUser = (friend: Friend): SocialUser => {
-    const existing = socialUsers.find((u) => u.id === friend.id || u.handle === friend.handle);
-    if (existing) return existing;
-    return {
-      id: friend.id,
-      name: friend.name,
-      handle: friend.handle || `@${friend.name.toLowerCase().replace(/\s+/g, '_')}`,
-      avatar: friend.avatar,
-      coverImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
-      bio: friend.statusText || 'MySpace Cyber Voyager. Music lover, arcade gamer & digital creator.',
-      isOnline: friend.isOnline,
-      statusText: friend.statusText || (friend.isOnline ? 'Online now' : 'Offline'),
-      isFollowing: true,
-      isFollower: true,
-      friendRequestStatus: 'friends',
-      followersCount: 2450,
-      followingCount: 380,
-      mutualFriendsCount: 12,
-      tags: ['#Friend', '#CyberNeon', '#MySpace'],
-      badges: ['💜 Best Friend'],
-    };
-  };
-
-  const handleStartVoiceCallWithFriend = (friend: Friend) => {
-    const userToCall = resolveFriendAsSocialUser(friend);
-    handleStartVoiceCall(userToCall);
-  };
-
-  const handleStartVideoCallWithFriend = (friend: Friend) => {
-    const userToCall = resolveFriendAsSocialUser(friend);
-    handleStartVideoCall(userToCall);
-  };
-
-  const handleOpenFriendProfile = (friend: Friend) => {
-    const userToOpen = resolveFriendAsSocialUser(friend);
-    handleOpenSocialUserProfile(userToOpen);
-  };
-
-  const handlePlayGameWithFriend = (friend: Friend) => {
-    const userToPlay = resolveFriendAsSocialUser(friend);
-    handlePlayGameWithUser(userToPlay);
-  };
-
-  const handlePlayGameWithUser = (userToPlay: SocialUser) => {
-    // Challenge notification
-    const notif: NotificationItem = {
-      id: `game_inv_${Date.now()}`,
-      type: 'game',
-      title: 'Arcade Challenge Launched',
-      message: `Challenged ${userToPlay.name} to a 1v1 match in MySpace Cyber Games!`,
-      time: 'Just now',
-      isRead: false,
-      avatar: userToPlay.avatar,
-    };
-    setNotifications((prev) => [notif, ...prev]);
-    setCurrentTab('games');
-  };
-
-  const handleOpenChatWithSocialUser = (socialUser: SocialUser) => {
-    const friendObj: Friend = {
-      id: socialUser.id,
-      name: socialUser.name,
-      avatar: socialUser.avatar,
-      isOnline: socialUser.isOnline,
-      statusText: socialUser.statusText,
-      handle: socialUser.handle,
-    };
-    handleOpenChatWithFriend(friendObj);
-  };
-
-  const handleOpenNetworkList = (tab: 'followers' | 'following') => {
-    setNetworkListTab(tab);
-    setIsNetworkListOpen(true);
-  };
-
-  // Link Sharing Handlers
-  const handleOpenShareLink = (platform?: 'instagram' | 'facebook' | 'youtube' | 'custom', prefillUrl?: string) => {
-    if (platform) setShareModalPlatform(platform);
-    setShareModalUrl(prefillUrl || '');
-    setIsShareModalOpen(true);
-  };
-
-  const handleCreateSharedLink = (linkData: Omit<SharedLink, 'id' | 'likes' | 'isLiked' | 'timestamp'>) => {
-    const newLink: SharedLink = {
-      ...linkData,
-      id: `link_${Date.now()}`,
-      likes: 1,
-      isLiked: true,
-      timestamp: 'Just now',
-    };
-    setSharedLinks((prev) => [newLink, ...prev]);
-
-    // Push notification for shared link
-    const notif: NotificationItem = {
-      id: `link_notif_${Date.now()}`,
-      type: 'system',
-      title: 'Link Shared 📲',
-      message: `"${newLink.title}" was shared to your MySpace home feed!`,
-      time: 'Just now',
-      isRead: false,
-    };
-    setNotifications((prev) => [notif, ...prev]);
-  };
-
-  const handleLikeSharedLink = (linkId: string) => {
-    setSharedLinks((prev) =>
-      prev.map((l) => {
-        if (l.id === linkId) {
-          const isLiked = !l.isLiked;
-          return {
-            ...l,
-            isLiked,
-            likes: isLiked ? l.likes + 1 : Math.max(0, l.likes - 1),
-          };
-        }
-        return l;
-      })
-    );
-  };
-
-  const handleOpenReels = (
-    index: number = 0,
-    platform: 'all' | 'youtube' | 'instagram' | 'facebook' = 'all'
-  ) => {
-    setSelectedReelIndex(index);
-    setReelsInitialPlatform(platform);
-    setIsReelsOpen(true);
-  };
-
-  const handleShareReelFromModal = (reel: Reel) => {
-    const reelLink =
-      reel.videoUrl ||
-      reel.externalUrl ||
-      `https://myspace.app/reels/${reel.id}`;
-    shareReel(reelLink);
-  };
 
   // HANDLERS
   const handleOpenChatThread = (chatId: string) => {
@@ -481,14 +128,19 @@ export default function App() {
     setCurrentTab('chat');
   };
 
-  const handleSendMessage = (chatId: string, text: string) => {
+  const handleSendMessage = (
+    chatId: string,
+    text: string,
+    attachment?: MessageAttachment
+  ) => {
     const newMsg = {
       id: `msg_${Date.now()}`,
-      senderId: 'user_me',
+      senderId: user.id,
       text,
       timestamp: 'Just now',
       isMe: true,
       status: 'sent' as const,
+      attachment,
     };
 
     setChatThreads((prev) =>
@@ -507,13 +159,25 @@ export default function App() {
 
     // Simulated quick friendly response after 1.2 seconds for realistic interaction
     setTimeout(() => {
-      const replies = [
-        'Awesome vibe! Love this neon energy ✨',
-        'Checking this out right now!',
-        'Totally agreed! Let us connect in the Arcade later 🕹️',
-        'Sounds great! Catch you soon 🔥',
-      ];
-      const randomReply = replies[Math.floor(Math.random() * replies.length)];
+      let randomReply = 'Awesome vibe! Love this neon energy ✨';
+      if (attachment?.type === 'game_invite') {
+        randomReply = `Challenge accepted! Booting up ${attachment.gameTitle || 'the game'} right now 🕹️⚡`;
+      } else if (attachment?.type === 'image') {
+        randomReply = 'Whoa, love this cyberpunk capture! Ultra high contrast 📸✨';
+      } else if (attachment?.type === 'audio') {
+        randomReply = 'Got your voice memo, crisp audio transmission! 🎧💜';
+      } else if (attachment?.type === 'sticker') {
+        randomReply = 'Nice sticker! Adding to my neon favorites matrix 👾';
+      } else {
+        const replies = [
+          'Awesome vibe! Love this neon energy ✨',
+          'Checking this out right now!',
+          'Totally agreed! Let us connect in the Arcade later 🕹️',
+          'Sounds great! Catch you soon 🔥',
+          'Synced up on the cyber grid! 🌌',
+        ];
+        randomReply = replies[Math.floor(Math.random() * replies.length)];
+      }
 
       const friendReply = {
         id: `msg_reply_${Date.now()}`,
@@ -583,7 +247,7 @@ export default function App() {
   ) => {
     const newPost: SocialPost = {
       ...newPostData,
-      id: `post_user_${Date.now()}`,
+      id: `post_${Date.now()}`,
       timestamp: 'Just now',
       likes: 1,
       isLiked: true,
@@ -591,53 +255,9 @@ export default function App() {
       sharesCount: 0,
       comments: [],
     };
-    setSocialPosts((prev) => {
-      const updated = [newPost, ...prev];
-      AccountService.saveUserPosts(activeAccount.id, updated);
-      return updated;
-    });
+    setSocialPosts([newPost, ...socialPosts]);
   };
 
-  const handleCreateReel = (newReelData: {
-    caption: string;
-    videoThumbnail: string;
-    soundTitle: string;
-    soundArtist: string;
-  }) => {
-    const newReel: Reel = {
-      id: `reel_${Date.now()}`,
-      creator: {
-        name: user.name,
-        handle: user.handle,
-        avatar: user.avatar,
-      },
-      caption: newReelData.caption,
-      videoThumbnail: newReelData.videoThumbnail,
-      likes: '1',
-      comments: '0',
-      audioTrack: `${newReelData.soundArtist} - ${newReelData.soundTitle}`,
-      tags: ['#MySpaceReels', '#CyberVibe'],
-    };
-    setReels((prev) => [newReel, ...prev]);
-  };
-
-  const handleUpdateConnectedApp = (
-    platform: ConnectedPlatform,
-    updatedApp: ConnectedAppAccount
-  ) => {
-    const updatedConnectedApps = {
-      ...activeAccount.connectedApps,
-      [platform]: updatedApp,
-    };
-    const updatedAccount: UserAccount = {
-      ...activeAccount,
-      connectedApps: updatedConnectedApps,
-    };
-    AccountService.updateAccount(updatedAccount);
-    setActiveAccount(updatedAccount);
-  };
-
-  // NOTIFICATION HANDLERS
   const handleMarkAllNotificationsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
   };
@@ -648,388 +268,121 @@ export default function App() {
     );
   };
 
-  const handleClearAllNotifications = () => {
-    setNotifications([]);
-  };
-
-  const handleFollowBackNotification = (notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, isFollowingBack: true, isRead: true } : n))
-    );
-
-    // Also update social users and profile stats
-    const notif = notifications.find((n) => n.id === notificationId);
-    if (notif?.senderHandle) {
-      setSocialUsers((prev) =>
-        prev.map((u) => (u.handle === notif.senderHandle ? { ...u, isFollowing: true } : u))
-      );
-    }
-    setUser((prev) => ({
-      ...prev,
-      stats: {
-        ...prev.stats,
-        friends: (prev.stats.friends || 842) + 1,
-      },
-    }));
-  };
-
-  const handleAcceptFriendRequest = (notificationId: string, requesterId?: string) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === notificationId ? { ...n, requestStatus: 'accepted' as const, isRead: true } : n
-      )
-    );
-
-    if (requesterId) {
-      setSocialUsers((prev) =>
-        prev.map((u) => (u.id === requesterId ? { ...u, friendRequestStatus: 'friends' } : u))
-      );
-    }
-
-    // Add new friend to friends list if not already there
-    const notif = notifications.find((n) => n.id === notificationId);
-    if (notif) {
-      const newFriend: Friend = {
-        id: requesterId || `f_${Date.now()}`,
-        name: notif.senderName || notif.title,
-        avatar: notif.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-        isOnline: true,
-        statusText: 'Connected as Friend',
-        handle: notif.senderHandle || '@cyber_friend',
-      };
-
-      setFriends((prev) => {
-        if (prev.some((f) => f.id === newFriend.id)) return prev;
-        return [newFriend, ...prev];
-      });
-
-      setUser((prev) => ({
-        ...prev,
-        stats: {
-          ...prev.stats,
-          friends: (prev.stats.friends || 842) + 1,
-        },
-      }));
-    }
-  };
-
-  const handleDeclineFriendRequest = (notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === notificationId ? { ...n, requestStatus: 'declined' as const, isRead: true } : n
-      )
-    );
-  };
-
-  const handleOpenChatFromNotification = (senderHandle?: string, senderName?: string) => {
-    const friend = friends.find((f) => f.handle === senderHandle || f.name === senderName) || {
-      id: `chat_sender_${Date.now()}`,
-      name: senderName || 'Cyber Contact',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-      isOnline: true,
-      handle: senderHandle || '@cyber_contact',
-    };
-    handleOpenChatWithFriend(friend);
-  };
-
-  const handleOpenLinkFromNotification = (url?: string) => {
-    if (url) {
-      handleOpenShareLink('youtube', url);
-    } else {
-      setCurrentTab('home');
-    }
-  };
-
-  const handlePlayGameFromNotification = (_gameId?: string) => {
-    setCurrentTab('games');
-  };
-
-  const handleCallBackFromNotification = (senderName?: string, callType?: 'voice' | 'video') => {
-    const targetUser = socialUsers.find((u) => u.name === senderName) || {
-      id: `call_${Date.now()}`,
-      name: senderName || 'Aria Chen',
-      handle: '@aria_neon',
-      avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80',
-      coverImage: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80',
-      bio: 'Cyberpunk musician and streamer',
-      isOnline: true,
-      statusText: 'Available',
-      isFollowing: true,
-      isFollower: true,
-      friendRequestStatus: 'friends' as const,
-      followersCount: 3100,
-      followingCount: 420,
-      mutualFriendsCount: 15,
-      tags: ['#Music', '#CyberNeon'],
-      badges: ['💎 Creator'],
-    };
-
-    if (callType === 'video') {
-      handleStartVideoCall(targetUser);
-    } else {
-      handleStartVoiceCall(targetUser);
-    }
-  };
-
-  // PROFILE & SETTINGS HANDLERS
   const handleUpdateBio = (newBio: string) => {
     setUser((prev) => ({ ...prev, bio: newBio }));
   };
 
-  const handleUpdateFullProfile = (updated: {
-    name: string;
-    handle: string;
-    bio: string;
-    avatar: string;
-    coverImage: string;
-    socialLinks?: UserSocialLinks;
-  }) => {
-    // If social links are provided, ensure persistent storage
-    const currentSocial = updated.socialLinks || loadSocialLinksFromStorage(user.id, user.socialLinks);
-    if (updated.socialLinks) {
-      saveSocialLinksToStorage(user.id, updated.socialLinks);
-    }
-
-    const updatedProfile: UserProfile = {
-      ...user,
-      name: updated.name,
-      handle: updated.handle,
-      bio: updated.bio,
-      avatar: updated.avatar,
-      coverImage: updated.coverImage,
-      socialLinks: currentSocial,
-    };
-    try {
-      localStorage.setItem('myspace_user', JSON.stringify(updatedProfile));
-    } catch (e) {
-      console.warn('Failed to save myspace_user', e);
-    }
-    setUser(updatedProfile);
-
-    const updatedAccount: UserAccount = {
-      ...activeAccount,
-      profile: updatedProfile,
-    };
-    AccountService.updateAccount(updatedAccount);
-    setActiveAccount(updatedAccount);
-
-    // Update any user-authored posts to reflect the new profile details
-    setSocialPosts((prev) => {
-      const updatedPosts = prev.map((post) => {
-        if (
-          post.id.startsWith('post_user_') ||
-          post.author.handle === user.handle ||
-          post.author.name === user.name
-        ) {
-          return {
-            ...post,
-            author: {
-              ...post.author,
-              name: updated.name,
-              handle: updated.handle,
-              avatar: updated.avatar,
-            },
-          };
-        }
-        return post;
-      });
-      AccountService.saveUserPosts(activeAccount.id, updatedPosts);
-      return updatedPosts;
-    });
-  };
-
-  const handleUpdateProfileSettings = (updated: {
-    name: string;
-    handle: string;
-    bio: string;
-    avatar: string;
-  }) => {
-    const updatedProfile: UserProfile = {
-      ...user,
-      name: updated.name,
-      handle: updated.handle,
-      bio: updated.bio,
-      avatar: updated.avatar,
-    };
-    setUser(updatedProfile);
-
-    const updatedAccount: UserAccount = {
-      ...activeAccount,
-      profile: updatedProfile,
-    };
-    AccountService.updateAccount(updatedAccount);
-    setActiveAccount(updatedAccount);
-  };
-
-  const handleLogout = () => {
-    AccountService.setActiveUserId(null);
-    setIsLoggedOut(true);
-  };
-
-  const handleLoginSuccess = (account: UserAccount) => {
-    AccountService.setActiveUserId(account.id);
-    setActiveAccount(account);
-    setUser(account.profile);
-    setChatThreads(AccountService.getSavedChats(account.id));
-    setSocialPosts(AccountService.getSavedPosts(account.id));
-    setNotifications(AccountService.getSavedNotifications(account.id));
-    setIsLoggedOut(false);
-    setCurrentTab('home');
-  };
-
-  if (isLoggedOut) {
+  // If not logged in, display the Welcome screen & Auth flow
+  if (!isLoggedIn) {
     return (
-      <LoginScreen
-        onLoginSuccess={handleLoginSuccess}
-        allAccounts={AccountService.getAllAccounts()}
-      />
+      <div className="min-h-screen bg-[#090714] text-slate-100 flex justify-center selection:bg-pink-500 selection:text-white">
+        <div className="w-full max-w-md min-h-screen flex flex-col bg-[#0b0818] relative shadow-[0_0_60px_rgba(168,85,247,0.2)] border-x border-purple-900/30">
+          <AuthView
+            onLoginSuccess={handleLoginSuccess}
+            registeredUsers={registeredUsers}
+            onRegisterUser={handleRegisterUser}
+          />
+
+          {/* Floating In-App Toast Banner */}
+          {toastMessage && (
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[80] max-w-[90%] px-4 py-2.5 rounded-2xl bg-[#1a1236]/95 border border-pink-500/60 shadow-[0_0_25px_rgba(236,72,153,0.5)] backdrop-blur-md text-white text-xs font-medium flex items-center gap-2 animate-bounce">
+              <Sparkles className="w-4 h-4 text-pink-400 shrink-0 animate-spin" />
+              <span>{toastMessage}</span>
+            </div>
+          )}
+        </div>
+      </div>
     );
   }
 
   return (
-    <MusicProvider>
-      <div className="min-h-screen bg-[#090714] text-slate-100 flex justify-center">
-      {/* Offline Status Indicator */}
-      <OfflineIndicator />
-
+    <div className="min-h-screen bg-[#090714] text-slate-100 flex justify-center">
       {/* Mobile-first centered frame */}
       <div className="w-full max-w-md min-h-screen flex flex-col bg-[#0b0818] relative shadow-[0_0_60px_rgba(168,85,247,0.2)] border-x border-purple-900/30">
         {/* Top Header */}
         <Header
           currentTab={currentTab}
-          currentUser={user}
           onSelectTab={(tab) => {
             setActiveChatId(null);
             setCurrentTab(tab);
           }}
           unreadNotificationsCount={unreadNotificationsCount}
-          onOpenNotifications={() => setCurrentTab('notifications')}
+          onOpenNotifications={() => setIsNotificationsOpen(true)}
           onOpenSearch={() => {
             setCurrentTab('home');
             const searchInput = document.getElementById('home-search-input');
             searchInput?.focus();
           }}
-          onOpenReels={() => handleOpenReels(0)}
-          onOpenShare={() => handleOpenShareLink('instagram')}
-          onOpenConnectedApps={() => setCurrentTab('connected-apps')}
+          currentUser={user}
+          onLogout={handleLogout}
         />
 
         {/* Main Content View Container */}
         <main className="flex-1 overflow-y-auto">
           {currentTab === 'home' && (
             <HomeView
-              currentUser={user}
               onSelectTab={(tab) => {
                 setActiveChatId(null);
                 setCurrentTab(tab);
               }}
-              onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+              onlineFriends={friends}
+              recentChats={chatThreads}
+              reels={mockReels}
+              tracks={mockTracks}
+              onOpenReels={() => setIsReelsOpen(true)}
+              onOpenYouTube={() => setIsYouTubeOpen(true)}
+              onOpenStory={(friend) => setSelectedStoryFriend(friend)}
+              onOpenChatThread={handleOpenChatThread}
+              onOpenNotifications={() => setIsNotificationsOpen(true)}
+              unreadNotificationsCount={unreadNotificationsCount}
             />
           )}
 
           {currentTab === 'chat' && (
             <ChatView
               chatThreads={chatThreads}
-              friends={friends}
+              allFriends={allFriends}
+              onlineFriends={friends}
               activeChatId={activeChatId}
               onSelectChat={(id) => setActiveChatId(id)}
               onSendMessage={handleSendMessage}
-              onStartVoiceCall={handleStartVoiceCallWithFriend}
-              onStartVideoCall={handleStartVideoCallWithFriend}
-              onOpenFriendProfile={handleOpenFriendProfile}
-              onPlayGame={handlePlayGameWithFriend}
               onOpenChatWithFriend={handleOpenChatWithFriend}
+              onNavigateToGames={() => setCurrentTab('games')}
+              onShowToast={showToast}
             />
           )}
 
           {currentTab === 'social' && (
             <SocialView
-              currentUser={user}
               posts={socialPosts}
-              socialUsers={socialUsers}
-              friends={friends}
               onLikePost={handleLikePost}
               onAddComment={handleAddComment}
               onCreatePost={handleCreatePost}
-              onCreateReel={handleCreateReel}
-              onOpenReels={(platform) => handleOpenReels(0, platform || 'youtube')}
-              onToggleFollow={handleToggleFollow}
-              onSelectUser={handleOpenSocialUserProfile}
-              onOpenNetworkList={handleOpenNetworkList}
-              onOpenChat={handleOpenChatWithSocialUser}
-              onOpenChatWithFriend={handleOpenChatWithFriend}
-              onStartVoiceCall={handleStartVoiceCall}
-              onStartVideoCall={handleStartVideoCall}
-              onPlayGame={handlePlayGameWithUser}
+              onShowToast={showToast}
+              currentUser={user}
             />
           )}
 
           {currentTab === 'games' && <GamesView games={mockGames} />}
 
-          {currentTab === 'music' && (
-            <MusicView onBackToHome={() => setCurrentTab('home')} />
-          )}
-
           {currentTab === 'profile' && (
             <ProfileView
               user={user}
-              posts={socialPosts}
-              sharedLinks={sharedLinks}
-              notifications={notifications}
-              unreadNotificationsCount={unreadNotificationsCount}
-              onOpenNotifications={() => setCurrentTab('notifications')}
-              onSelectTab={(tab) => setCurrentTab(tab)}
               onOpenChatWithFriend={handleOpenChatWithFriend}
-              onUpdateProfile={handleUpdateFullProfile}
-              onOpenNetworkList={handleOpenNetworkList}
-              onDiscoverPeople={() => setCurrentTab('social')}
-              onOpenSettings={() => setCurrentTab('settings')}
-              onOpenShareModal={() => setIsShareModalOpen(true)}
-              onCreatePost={() => setCurrentTab('social')}
-              onLikePost={handleLikePost}
-              onLikeSharedLink={handleLikeSharedLink}
-              onOpenReel={handleOpenReels}
-              followersCount={socialUsers.filter((u) => u.isFollower).length}
-              followingCount={socialUsers.filter((u) => u.isFollowing).length}
-            />
-          )}
-
-          {currentTab === 'notifications' && (
-            <NotificationsView
-              notifications={notifications}
-              onBackToHome={() => setCurrentTab('home')}
-              onMarkAsRead={handleDismissNotification}
-              onMarkAllAsRead={handleMarkAllNotificationsRead}
-              onClearAll={handleClearAllNotifications}
-              onAcceptFriendRequest={handleAcceptFriendRequest}
-              onDeclineFriendRequest={handleDeclineFriendRequest}
-              onFollowBack={handleFollowBackNotification}
-              onOpenChat={handleOpenChatFromNotification}
-              onOpenLink={handleOpenLinkFromNotification}
-              onPlayGame={handlePlayGameFromNotification}
-              onCallBack={handleCallBackFromNotification}
-            />
-          )}
-
-          {currentTab === 'settings' && (
-            <SettingsView
-              user={user}
-              onBackToProfile={() => setCurrentTab('profile')}
-              onUpdateProfile={handleUpdateProfileSettings}
+              onUpdateBio={handleUpdateBio}
+              onShowToast={showToast}
               onLogout={handleLogout}
-              onNavigateToConnectedApps={() => setCurrentTab('connected-apps')}
-            />
-          )}
-
-          {currentTab === 'connected-apps' && (
-            <ConnectedAppsView
-              user={user}
-              connectedApps={activeAccount.connectedApps}
-              onUpdateConnectedApp={handleUpdateConnectedApp}
-              onBack={() => setCurrentTab('home')}
             />
           )}
         </main>
+
+        {/* Floating In-App Toast Banner */}
+        {toastMessage && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[60] max-w-[90%] px-4 py-2.5 rounded-2xl bg-[#1a1236]/95 border border-pink-500/60 shadow-[0_0_25px_rgba(236,72,153,0.5)] backdrop-blur-md text-white text-xs font-medium flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-pink-400 shrink-0 animate-spin" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
 
         {/* Bottom Navigation */}
         <BottomNav
@@ -1041,35 +394,18 @@ export default function App() {
           unreadChatCount={unreadChatCount}
         />
 
-        {/* Global Edit Profile Modal (for onboarding from Home) */}
-        <EditProfileModal
-          isOpen={isEditProfileModalOpen}
-          onClose={() => setIsEditProfileModalOpen(false)}
-          user={user}
-          onSave={handleUpdateFullProfile}
-        />
-
         {/* Modals */}
         <ReelsModal
           isOpen={isReelsOpen}
           onClose={() => setIsReelsOpen(false)}
-          reels={reels}
-          initialReelIndex={selectedReelIndex}
-          initialPlatform={reelsInitialPlatform}
-          onShareReel={handleShareReelFromModal}
-        />
-
-        <ShareLinkModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          onShareLink={handleCreateSharedLink}
-          initialPlatform={shareModalPlatform}
-          initialUrl={shareModalUrl}
+          reels={mockReels}
+          onShowToast={showToast}
         />
 
         <YouTubeModal
           isOpen={isYouTubeOpen}
           onClose={() => setIsYouTubeOpen(false)}
+          onShowToast={showToast}
         />
 
         <StoryModal
@@ -1084,55 +420,8 @@ export default function App() {
           notifications={notifications}
           onMarkAllAsRead={handleMarkAllNotificationsRead}
           onDismissNotification={handleDismissNotification}
-          onAcceptFriendRequest={handleAcceptFriendRequest}
-          onDeclineFriendRequest={handleDeclineFriendRequest}
-        />
-
-        {/* Social / Friends Modals */}
-        <UserProfileModal
-          isOpen={!!selectedProfileUser}
-          onClose={() => setSelectedProfileUser(null)}
-          user={selectedProfileUser}
-          onToggleFollow={handleToggleFollow}
-          onSendFriendRequest={handleSendFriendRequest}
-          onOpenChat={handleOpenChatWithSocialUser}
-          onStartVoiceCall={handleStartVoiceCall}
-          onStartVideoCall={handleStartVideoCall}
-          onPlayGame={handlePlayGameWithUser}
-        />
-
-        <VoiceCallModal
-          isOpen={isVoiceCallOpen}
-          onClose={() => {
-            setIsVoiceCallOpen(false);
-            setCallUser(null);
-          }}
-          user={callUser}
-        />
-
-        <VideoCallModal
-          isOpen={isVideoCallOpen}
-          onClose={() => {
-            setIsVideoCallOpen(false);
-            setVideoCallUser(null);
-          }}
-          user={videoCallUser}
-          currentUser={user}
-        />
-
-        <NetworkListModal
-          isOpen={isNetworkListOpen}
-          onClose={() => setIsNetworkListOpen(false)}
-          initialTab={networkListTab}
-          users={socialUsers}
-          onToggleFollow={handleToggleFollow}
-          onSelectUser={(u) => {
-            setIsNetworkListOpen(false);
-            setSelectedProfileUser(u);
-          }}
         />
       </div>
     </div>
-    </MusicProvider>
   );
 }

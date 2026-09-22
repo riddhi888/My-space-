@@ -1,610 +1,359 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
+  Music,
+  Users,
+  Eye,
   Sparkles,
   Edit3,
+  Award,
   Share2,
   Settings,
-  ChevronDown,
-  Layers,
-  MessageSquare,
-  Camera,
-  User,
   Heart,
-  Plus,
-  ArrowRight,
-  Lock,
+  Play,
+  Pause,
+  Grid,
+  Bookmark,
+  Check,
+  Flame,
+  LogOut,
 } from 'lucide-react';
-import {
-  UserProfile,
-  Friend,
-  SocialPost,
-  SharedLink,
-  MusicTrack,
-  Reel,
-  UserSettings,
-  NotificationItem,
-  TabType,
-  ProfileMoodType,
-  UserSocialLinks,
-} from '../types';
-import { EditProfileModal } from './EditProfileModal';
-import { GuestbookWall } from './GuestbookWall';
-import {
-  ProfileHeaderSocialLinks,
-  loadSocialLinksFromStorage,
-  saveSocialLinksToStorage,
-} from './SocialIcons';
-
-export const MOOD_OPTIONS: Record<
-  ProfileMoodType,
-  {
-    label: string;
-    emoji: string;
-    color: string;
-    glow: string;
-    borderColor: string;
-    description: string;
-  }
-> = {
-  Ecstatic: {
-    label: 'Ecstatic',
-    emoji: '😁',
-    color: '#f59e0b',
-    glow: 'rgba(245, 158, 11, 0.55)',
-    borderColor: '#f59e0b',
-    description: 'feeling on top of the world :D',
-  },
-  Bored: {
-    label: 'Bored',
-    emoji: '🥱',
-    color: '#94a3b8',
-    glow: 'rgba(148, 163, 184, 0.4)',
-    borderColor: '#94a3b8',
-    description: 'someone entertain me -_-',
-  },
-  Hungover: {
-    label: 'Hungover',
-    emoji: '😵‍💫',
-    color: '#a3e635',
-    glow: 'rgba(163, 230, 53, 0.5)',
-    borderColor: '#a3e635',
-    description: 'too much energy drink last night x_x',
-  },
-  Hyper: {
-    label: 'Hyper',
-    emoji: '⚡',
-    color: '#ec4899',
-    glow: 'rgba(236, 72, 153, 0.6)',
-    borderColor: '#ec4899',
-    description: 'CANNOT SIT STILL >_< !!!',
-  },
-  Melancholy: {
-    label: 'Melancholy',
-    emoji: '🥀',
-    color: '#818cf8',
-    glow: 'rgba(129, 140, 248, 0.5)',
-    borderColor: '#818cf8',
-    description: 'listening to sad songs in the dark :(',
-  },
-  Creative: {
-    label: 'Creative',
-    emoji: '🎨',
-    color: '#22d3ee',
-    glow: 'rgba(34, 211, 238, 0.6)',
-    borderColor: '#22d3ee',
-    description: 'coding my profile layout & making art ;)',
-  },
-};
+import { UserProfile, Friend } from '../types';
 
 interface ProfileViewProps {
   user: UserProfile;
-  posts?: SocialPost[];
-  sharedLinks?: SharedLink[];
-  favoriteTracks?: MusicTrack[];
-  favoriteReels?: Reel[];
-  notifications?: NotificationItem[];
-  unreadNotificationsCount?: number;
-  onOpenNotifications?: () => void;
-  onSelectTab?: (tab: TabType) => void;
   onOpenChatWithFriend: (friend: Friend) => void;
-  onUpdateProfile: (updatedData: {
-    name: string;
-    handle: string;
-    bio: string;
-    avatar: string;
-    coverImage: string;
-    socialLinks?: UserSocialLinks;
-  }) => void;
-  onOpenNetworkList?: (tab: 'followers' | 'following') => void;
-  onDiscoverPeople?: () => void;
-  onSelectFriend?: (friend: Friend) => void;
-  onOpenSettings?: () => void;
-  onOpenShareModal?: () => void;
-  onCreatePost?: () => void;
-  onLikePost?: (postId: string) => void;
-  onLikeSharedLink?: (linkId: string) => void;
-  onOpenReel?: (index: number) => void;
-  followingCount?: number;
-  followersCount?: number;
-  settings?: UserSettings;
+  onUpdateBio: (newBio: string) => void;
+  onShowToast?: (msg: string) => void;
+  onLogout?: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
   user,
-  posts = [],
-  onSelectTab,
-  onUpdateProfile,
-  onOpenSettings,
-  onCreatePost,
-  onLikePost,
-  settings,
+  onOpenChatWithFriend,
+  onUpdateBio,
+  onShowToast,
+  onLogout,
 }) => {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editModalInitialTab, setEditModalInitialTab] = useState<'info' | 'social' | 'avatar' | 'cover' | 'preview'>('info');
-  const [activeTab, setActiveTab] = useState<'guestbook' | 'posts'>('guestbook');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isPlayingSong, setIsPlayingSong] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState(user.bio);
+  const [activeTab, setActiveTab] = useState<'top8' | 'photos' | 'badges'>('top8');
 
-  // Social Links State with localStorage sync
-  const [socialLinksState, setSocialLinksState] = useState<UserSocialLinks>(() =>
-    loadSocialLinksFromStorage(user.id, user.socialLinks)
-  );
+  const galleryImages = [
+    'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=400&q=80',
+    'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80',
+  ];
 
-  useEffect(() => {
-    const handleSync = () => {
-      setSocialLinksState(loadSocialLinksFromStorage(user.id, user.socialLinks));
-    };
-    handleSync();
-    window.addEventListener('socialLinks-updated', handleSync);
-    window.addEventListener('storage', handleSync);
-    return () => {
-      window.removeEventListener('socialLinks-updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-    };
-  }, [user.id, user.socialLinks]);
-
-  // 2008 Retro Mood State
-  const moodStorageKey = `myspace_user_mood_${user.id || 'default'}`;
-  const [currentMood, setCurrentMood] = useState<ProfileMoodType>(() => {
-    try {
-      const saved = localStorage.getItem(moodStorageKey);
-      if (saved && saved in MOOD_OPTIONS) {
-        return saved as ProfileMoodType;
-      }
-    } catch {
-      // fallback
-    }
-    return 'Creative';
-  });
-  const [isMoodDropdownOpen, setIsMoodDropdownOpen] = useState(false);
-
-  const handleSelectMood = (mood: ProfileMoodType) => {
-    setCurrentMood(mood);
-    setIsMoodDropdownOpen(false);
-    try {
-      localStorage.setItem(moodStorageKey, mood);
-    } catch (e) {
-      console.error('Failed to save mood', e);
-    }
-    showToast(`Mood updated to: ${MOOD_OPTIONS[mood].emoji} ${mood}`);
+  const handleSaveBio = () => {
+    onUpdateBio(bioDraft);
+    setIsEditingBio(false);
   };
 
-  const activeMoodConfig = MOOD_OPTIONS[currentMood] || MOOD_OPTIONS.Creative;
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2400);
-  };
-
-  const handleShareProfile = () => {
-    navigator.clipboard?.writeText?.(window.location.href);
-    showToast('Profile link copied to clipboard!');
-  };
-
-  // Real user posts only (starts empty)
-  const userPosts = posts.filter(
-    (p) =>
-      (user.handle && p.author.handle === user.handle) ||
-      (user.name && p.author.name === user.name) ||
-      p.id.startsWith('post_user_')
-  );
-
-  const hasUserProfile = Boolean(user.name && user.name.trim().length > 0 && user.name !== 'Alex Rivera');
-
-  // ================= 1. EMPTY PROFILE ONBOARDING STATE =================
-  if (!hasUserProfile) {
-    return (
-      <div className="p-4 pb-28 max-w-md mx-auto space-y-4 animate-in fade-in duration-200">
-        <div
-          id="profile-empty-onboarding-card"
-          className="rounded-2xl bg-[#140e2b] border border-purple-800/70 p-6 text-center space-y-4 shadow-xl relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
-
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500/20 via-purple-600/30 to-cyan-400/20 border border-pink-500/40 flex items-center justify-center text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.2)]">
-            <User className="w-8 h-8 text-pink-400" />
-          </div>
-
-          <div className="space-y-1.5">
-            <h1 className="font-display font-extrabold text-lg text-white tracking-tight">
-              Welcome to MySpace 2008!
-            </h1>
-            <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-              Your profile is currently empty. Edit your profile to set up your name, photo, mood, and social links.
-            </p>
-          </div>
-
-          <div className="pt-2 flex flex-col items-center justify-center gap-2">
-            <button
-              id="profile-start-edit-btn"
-              onClick={() => {
-                setEditModalInitialTab('info');
-                setIsEditModalOpen(true);
-              }}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-400 hover:to-cyan-400 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(236,72,153,0.4)] transition-all cursor-pointer active:scale-98"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Edit Profile</span>
-              <ArrowRight className="w-4 h-4 ml-0.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Edit Profile Modal */}
-        <EditProfileModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          user={{ ...user, socialLinks: socialLinksState }}
-          initialTab={editModalInitialTab}
-          onSave={(updatedData) => {
-            if (updatedData.socialLinks) {
-              setSocialLinksState(updatedData.socialLinks);
-              saveSocialLinksToStorage(user.id, updatedData.socialLinks);
-            }
-            onUpdateProfile(updatedData);
-            showToast('Profile created successfully! ✨');
-          }}
-        />
-      </div>
-    );
-  }
-
-  // ================= 2. REAL USER PROFILE VIEW =================
   return (
-    <div className="space-y-4 pb-28 animate-in fade-in duration-200">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-[#140b2b] border border-pink-500/60 shadow-[0_0_20px_rgba(236,72,153,0.5)] text-pink-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200">
-          <Sparkles className="w-4 h-4 text-cyan-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div className="space-y-5 pb-28">
+      {/* Cover Banner with Neon Gradient Overlay */}
+      <div className="relative h-36 w-full overflow-hidden bg-purple-950">
+        <img
+          src={user.coverImage}
+          alt="Profile Cover"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-black/40" />
 
-      {/* COVER BANNER WITH RETRO GRADIENT & MOOD BORDER */}
-      <div
-        id="profile-cover-banner"
-        className="relative h-36 w-full overflow-hidden bg-[#0a0717] transition-all duration-300 border-b-4"
-        style={{
-          borderColor: activeMoodConfig.borderColor,
-          boxShadow: `0 6px 20px ${activeMoodConfig.glow}`,
-        }}
-      >
-        {user.coverImage ? (
-          <img
-            src={user.coverImage}
-            alt="Profile Cover"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-[#210936] via-[#120726] to-[#0a182e] flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(236,72,153,0.25),transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(6,182,212,0.2),transparent_60%)]" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-[#090714]/30 to-black/20" />
-
-        {/* Top Right Action Icons */}
+        {/* Action icons on top right */}
         <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
           <button
-            id="profile-share-link-btn"
-            onClick={handleShareProfile}
-            className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-pink-500 transition-colors shadow-sm cursor-pointer"
-            title="Share Profile Link"
+            id="share-profile-btn"
+            onClick={() => onShowToast ? onShowToast('Profile URL copied to clipboard!') : null}
+            className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-pink-500 transition-colors"
+            title="Share Profile"
           >
             <Share2 className="w-4 h-4" />
           </button>
-
-          {onOpenSettings && (
+          <button
+            id="profile-settings-btn"
+            onClick={() => onShowToast ? onShowToast('Account settings & neon theme customizer opened') : null}
+            className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-purple-600 transition-colors"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          {onLogout && (
             <button
-              id="profile-settings-btn"
-              onClick={onOpenSettings}
-              className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-purple-600 transition-colors shadow-sm cursor-pointer"
-              title="Settings & Account"
+              id="profile-header-logout-btn"
+              onClick={onLogout}
+              className="p-2 rounded-full bg-rose-950/70 border border-rose-500/40 backdrop-blur-md text-rose-300 hover:bg-rose-600 hover:text-white transition-colors"
+              title="Log Out of MySpace"
             >
-              <Settings className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* AVATAR & MAIN USER IDENTITY INFO */}
-      <div className="px-4 -mt-12 relative z-10 space-y-3">
+      {/* Avatar & Main Info */}
+      <div className="px-4 -mt-14 relative z-10 space-y-3">
         <div className="flex items-end justify-between">
-          {/* Avatar with glowing neon ring and online status */}
-          <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(236,72,153,0.5)]">
-            {user.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                referrerPolicy="no-referrer"
-                className="w-20 h-20 rounded-full object-cover border-4 border-[#090714]"
-              />
-            ) : (
-              <div
-                onClick={() => {
-                  setEditModalInitialTab('avatar');
-                  setIsEditModalOpen(true);
-                }}
-                className="w-20 h-20 rounded-full bg-purple-950/90 border-4 border-[#090714] flex flex-col items-center justify-center text-pink-400 cursor-pointer hover:bg-purple-900 transition-colors"
-                title="Add Profile Photo"
-              >
-                <Camera className="w-6 h-6" />
-                <span className="text-[8px] font-mono mt-0.5 text-pink-300">Add Photo</span>
-              </div>
-            )}
-            <span
-              className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]"
-              title="Online now"
+          {/* Avatar with glowing ring */}
+          <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_25px_rgba(236,72,153,0.5)]">
+            <img
+              src={user.avatar}
+              alt={user.name}
+              referrerPolicy="no-referrer"
+              className="w-22 h-22 rounded-full object-cover border-4 border-[#090714]"
             />
+            <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]" />
           </div>
 
-          {/* Edit Profile Action Button */}
+          {/* Action Buttons: Edit Bio & Logout */}
           <div className="flex items-center gap-2">
             <button
               id="edit-profile-action-btn"
-              onClick={() => {
-                setEditModalInitialTab('info');
-                setIsEditModalOpen(true);
-              }}
-              className="px-4 py-2 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(236,72,153,0.4)] flex items-center gap-1.5 cursor-pointer"
+              onClick={() => setIsEditingBio(!isEditingBio)}
+              className="px-3.5 py-2 rounded-2xl bg-purple-950/60 border border-pink-500/40 text-pink-300 text-xs font-semibold hover:bg-pink-500 hover:text-white transition-all shadow-sm flex items-center gap-1.5"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              Edit Profile
+              {isEditingBio ? 'Cancel' : 'Edit Bio'}
             </button>
+
+            {onLogout && (
+              <button
+                id="logout-button"
+                onClick={onLogout}
+                className="px-3.5 py-2 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-300 hover:bg-rose-600 hover:text-white text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
+                title="Log Out of MySpace"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Display Name, Mood Dropdown, & Username (@handle) */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-display font-black text-xl text-white tracking-wide">
+        {/* Name and Handle */}
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display font-bold text-xl text-white">
               {user.name}
-            </h1>
+            </h2>
+            <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-mono">
+              VIP CREATOR
+            </span>
+          </div>
+          <p className="text-xs text-cyan-400 font-mono mt-0.5">{user.handle}</p>
+        </div>
 
-            {/* Retro 2008 Mood Dropdown beside profile name */}
-            <div className="relative inline-block">
-              <button
-                type="button"
-                id="profile-mood-dropdown-btn"
-                onClick={() => setIsMoodDropdownOpen(!isMoodDropdownOpen)}
-                className="px-2 py-0.5 rounded-md border text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer select-none hover:scale-102 active:scale-95"
-                style={{
-                  borderColor: activeMoodConfig.color,
-                  backgroundColor: `${activeMoodConfig.color}20`,
-                  color: activeMoodConfig.color,
-                  boxShadow: `0 0 10px ${activeMoodConfig.color}35`,
-                }}
-                title="Change 2008 MySpace Mood"
-              >
-                <span>{activeMoodConfig.emoji}</span>
-                <span className="font-bold">Mood: {currentMood}</span>
-                <ChevronDown className="w-3 h-3 opacity-70" />
-              </button>
+        {/* Bio */}
+        {isEditingBio ? (
+          <div className="space-y-2 p-3 bg-purple-950/40 rounded-2xl border border-pink-500/40">
+            <textarea
+              id="bio-edit-textarea"
+              value={bioDraft}
+              onChange={(e) => setBioDraft(e.target.value)}
+              rows={3}
+              className="w-full p-2 bg-black/40 border border-purple-800/40 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-pink-500 resize-none"
+            />
+            <button
+              id="save-bio-btn"
+              onClick={handleSaveBio}
+              className="px-3 py-1.5 rounded-xl bg-pink-500 text-white text-xs font-semibold flex items-center gap-1"
+            >
+              <Check className="w-3.5 h-3.5" /> Save Changes
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 leading-relaxed">{user.bio}</p>
+        )}
 
-              {/* 2008 Retro Mood Dropdown Popup */}
-              {isMoodDropdownOpen && (
-                <div
-                  id="profile-mood-dropdown-menu"
-                  className="absolute left-0 top-full mt-1 z-40 w-48 rounded-xl bg-[#120824] border-2 border-purple-600/80 p-1 shadow-[0_0_25px_rgba(0,0,0,0.85)] space-y-0.5 text-xs animate-in fade-in duration-100"
-                >
-                  <div className="px-2 py-1 border-b border-purple-800/40 text-[9px] font-mono text-cyan-300 flex items-center justify-between">
-                    <span>STATUS: 2008 MOOD</span>
-                  </div>
-
-                  {(Object.keys(MOOD_OPTIONS) as ProfileMoodType[]).map((moodKey) => {
-                    const item = MOOD_OPTIONS[moodKey];
-                    const isSelected = currentMood === moodKey;
-                    return (
-                      <button
-                        key={moodKey}
-                        type="button"
-                        onClick={() => handleSelectMood(moodKey)}
-                        className={`w-full px-2 py-1 rounded-md text-left flex items-center justify-between transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-purple-900/80 text-white font-bold'
-                            : 'hover:bg-purple-950/60 text-slate-300'
-                        }`}
-                        style={{
-                          borderLeft: isSelected ? `3px solid ${item.color}` : '3px solid transparent',
-                        }}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">{item.emoji}</span>
-                          <span className="text-[11px] font-medium">{moodKey}</span>
-                        </div>
-                        {isSelected && (
-                          <span className="text-[8px] font-mono font-bold" style={{ color: item.color }}>
-                            ✓ Active
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+        {/* Profile Song Card (The Classic Iconic MySpace feature!) */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/70 via-[#181033] to-pink-950/60 border border-pink-500/30 shadow-[0_0_20px_rgba(236,72,153,0.15)] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              id="profile-song-toggle-btn"
+              onClick={() => setIsPlayingSong(!isPlayingSong)}
+              className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform"
+            >
+              {isPlayingSong ? (
+                <Pause className="w-4 h-4 fill-white" />
+              ) : (
+                <Play className="w-4 h-4 fill-white ml-0.5" />
               )}
+            </button>
+            <div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-pink-400 uppercase tracking-wider">
+                <Music className={`w-3 h-3 ${isPlayingSong ? 'animate-bounce' : ''}`} />
+                <span>MySpace Profile Anthem</span>
+              </div>
+              <h4 className="text-xs font-semibold text-white mt-0.5">
+                {user.profileSong.title}
+              </h4>
+              <p className="text-[11px] text-cyan-300">{user.profileSong.artist}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            {user.handle && (
-              <p className="text-cyan-400 font-mono font-medium">{user.handle}</p>
-            )}
-            <span className="text-[10px] text-slate-400 font-mono italic">
-              — feeling {activeMoodConfig.description}
+          <div className="flex items-end gap-0.5 h-4">
+            {[30, 80, 50, 95, 60, 40].map((h, i) => (
+              <div
+                key={i}
+                className={`w-1 rounded-full bg-pink-500 ${isPlayingSong ? 'animate-pulse' : 'opacity-30'}`}
+                style={{ height: isPlayingSong ? `${h}%` : '30%' }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Stats Row: Followers, Following, Friends, Views */}
+        <div className="grid grid-cols-4 gap-2 pt-1">
+          <div className="p-2.5 rounded-2xl bg-[#120c29] border border-purple-800/40 text-center">
+            <span className="font-display font-bold text-base text-pink-400">
+              {user.stats.followers}
             </span>
+            <p className="text-[10px] text-slate-400 mt-0.5">Followers</p>
           </div>
-
-          {/* Connected Social Accounts with Brand Colors on Profile Header */}
-          <ProfileHeaderSocialLinks socialLinks={socialLinksState} size="md" />
+          <div className="p-2.5 rounded-2xl bg-[#120c29] border border-purple-800/40 text-center">
+            <span className="font-display font-bold text-base text-cyan-400">
+              {user.stats.following ?? 0}
+            </span>
+            <p className="text-[10px] text-slate-400 mt-0.5">Following</p>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#120c29] border border-purple-800/40 text-center">
+            <span className="font-display font-bold text-base text-white">
+              {user.stats.friends}
+            </span>
+            <p className="text-[10px] text-slate-400 mt-0.5">Friends</p>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-[#120c29] border border-purple-800/40 text-center">
+            <span className="font-display font-bold text-base text-purple-300">
+              {user.stats.views}
+            </span>
+            <p className="text-[10px] text-slate-400 mt-0.5">Views</p>
+          </div>
         </div>
+      </div>
 
-        {/* Real Bio */}
-        {user.bio ? (
-          <p className="text-xs text-slate-300 leading-relaxed font-normal pt-1">
-            {user.bio}
-          </p>
-        ) : (
-          <div
-            onClick={() => {
-              setEditModalInitialTab('info');
-              setIsEditModalOpen(true);
-            }}
-            className="p-2.5 rounded-xl bg-purple-950/30 border border-purple-900/40 text-[11px] text-slate-400 cursor-pointer hover:border-pink-500/50 hover:text-slate-200 transition-colors"
+      {/* Tabs: Top 8 Friends, Photos, Badges */}
+      <div className="px-4 space-y-3">
+        <div className="flex bg-purple-950/40 p-1 rounded-2xl border border-purple-800/30 text-xs">
+          <button
+            id="tab-top8-btn"
+            onClick={() => setActiveTab('top8')}
+            className={`flex-1 py-2 rounded-xl font-semibold transition-all ${
+              activeTab === 'top8'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
           >
-            ✏️ Click to add a bio to your profile
-          </div>
-        )}
-
-        {/* PROFILE CONTENT TABS: Guestbook & Posts */}
-        <div className="pt-2">
-          <div className="flex bg-[#0d091e] p-1 rounded-xl border border-purple-800/40 text-xs gap-1">
-            <button
-              id="profile-tab-guestbook-btn"
-              onClick={() => setActiveTab('guestbook')}
-              className={`flex-1 py-1.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === 'guestbook'
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Guestbook Wall</span>
-            </button>
-
-            <button
-              id="profile-tab-posts-btn"
-              onClick={() => setActiveTab('posts')}
-              className={`flex-1 py-1.5 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === 'posts'
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Posts ({userPosts.length})</span>
-            </button>
-          </div>
+            ⭐ Top 8 Friends
+          </button>
+          <button
+            id="tab-photos-btn"
+            onClick={() => setActiveTab('photos')}
+            className={`flex-1 py-2 rounded-xl font-semibold transition-all ${
+              activeTab === 'photos'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            📸 Gallery
+          </button>
+          <button
+            id="tab-badges-btn"
+            onClick={() => setActiveTab('badges')}
+            className={`flex-1 py-2 rounded-xl font-semibold transition-all ${
+              activeTab === 'badges'
+                ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🏆 Badges
+          </button>
         </div>
 
-        {/* TAB 1: GUESTBOOK WALL (Real user signatures only, starts empty) */}
-        {activeTab === 'guestbook' && (
-          <div className="pt-1">
-            <GuestbookWall userId={user.id} userName={user.name} />
+        {/* TAB 1: ICONIC TOP 8 FRIENDS */}
+        {activeTab === 'top8' && (
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-300">
+                Alex's Inner Circle (Top 8)
+              </span>
+              <span className="text-pink-400 font-mono">Tap friend to message</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2.5">
+              {user.top8Friends.map((friend) => (
+                <button
+                  key={friend.id}
+                  id={`top8-friend-${friend.id}`}
+                  onClick={() => onOpenChatWithFriend(friend)}
+                  className="flex flex-col items-center p-2 rounded-2xl bg-[#120c29] border border-purple-800/40 hover:border-pink-500/50 transition-all group cursor-pointer focus:outline-none"
+                >
+                  <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 group-hover:scale-105 transition-transform">
+                    <img
+                      src={friend.avatar}
+                      alt={friend.name}
+                      referrerPolicy="no-referrer"
+                      className="w-13 h-13 rounded-full object-cover border-2 border-[#090714]"
+                    />
+                    {friend.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
+                    )}
+                  </div>
+                  <span className="text-[11px] font-semibold text-white mt-1.5 truncate max-w-full group-hover:text-pink-300">
+                    {friend.name.split(' ')[0]}
+                  </span>
+                  <span className="text-[9px] text-cyan-300 font-mono truncate max-w-full">
+                    {friend.handle}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* TAB 2: POSTS (Real posts authored by user only, starts empty) */}
-        {activeTab === 'posts' && (
-          <div className="pt-1 space-y-3">
-            {onCreatePost && (
-              <button
-                onClick={onCreatePost}
-                className="w-full p-3 rounded-2xl bg-[#140e2b] border border-purple-800/60 hover:border-pink-500 text-xs text-pink-300 font-semibold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+        {/* TAB 2: PHOTOS GALLERY */}
+        {activeTab === 'photos' && (
+          <div className="grid grid-cols-3 gap-2">
+            {galleryImages.map((src, idx) => (
+              <div
+                key={idx}
+                className="aspect-square rounded-2xl overflow-hidden border border-purple-800/30 group cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>Create New Post</span>
-              </button>
-            )}
+                <img
+                  src={src}
+                  alt="Gallery upload"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-            {userPosts.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-[#120c29] border border-purple-900/40 text-center space-y-2">
-                <Layers className="w-8 h-8 text-purple-400/60 mx-auto" />
-                <h3 className="text-xs font-bold text-slate-200">No posts yet</h3>
-                <p className="text-[11px] text-slate-400">
-                  Share updates, thoughts, and retro musings with your visitors!
-                </p>
+        {/* TAB 3: BADGES */}
+        {activeTab === 'badges' && (
+          <div className="space-y-2">
+            {user.badges.map((badge, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-[#120c29] border border-purple-800/40"
+              >
+                <div className="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400 font-bold">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">{badge}</h4>
+                  <p className="text-[10px] text-slate-400">Unlocked achievement badge</p>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {userPosts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="p-3.5 rounded-2xl bg-[#120c29] border border-purple-800/40 space-y-2.5"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {post.author.avatar ? (
-                        <img
-                          src={post.author.avatar}
-                          alt={post.author.name}
-                          className="w-8 h-8 rounded-full object-cover border border-pink-500/50"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-purple-950 flex items-center justify-center text-pink-400 text-xs font-bold">
-                          {post.author.name?.charAt(0) || 'U'}
-                        </div>
-                      )}
-                      <div>
-                        <h4 className="text-xs font-bold text-white">{post.author.name}</h4>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {post.timestamp}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-200">{post.content}</p>
-                    {post.image && (
-                      <div className="rounded-xl overflow-hidden max-h-60 border border-purple-900/40">
-                        <img
-                          src={post.image}
-                          alt="Post media"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-4 pt-1 border-t border-purple-900/30 text-[11px] text-slate-400">
-                      <button
-                        onClick={() => onLikePost?.(post.id)}
-                        className="flex items-center gap-1 hover:text-pink-400 transition-colors"
-                      >
-                        <Heart className="w-3.5 h-3.5" />
-                        <span>{post.likes} likes</span>
-                      </button>
-                      <span>{post.commentsCount} comments</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         )}
       </div>
-
-      {/* FULL EDIT PROFILE MODAL */}
-      <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        user={{ ...user, socialLinks: socialLinksState }}
-        initialTab={editModalInitialTab}
-        onSave={(updatedData) => {
-          if (updatedData.socialLinks) {
-            setSocialLinksState(updatedData.socialLinks);
-            saveSocialLinksToStorage(user.id, updatedData.socialLinks);
-          }
-          onUpdateProfile(updatedData);
-          showToast('Profile updated successfully! ✨');
-        }}
-      />
     </div>
   );
 };
