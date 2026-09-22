@@ -65,9 +65,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
           className={`w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-pink-950/40 via-purple-950/40 to-cyan-950/40 border border-pink-500/40 hover:border-pink-400 text-white transition-all shadow-[0_0_20px_rgba(236,72,153,0.2)] hover:shadow-[0_0_25px_rgba(236,72,153,0.35)] cursor-pointer group ${className}`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-500/50 flex items-center justify-center text-pink-400 group-hover:scale-105 transition-transform">
-              <Smartphone className="w-5 h-5" />
-            </div>
+            <img
+              src="/IMG-20260922-WA2869.jpg"
+              alt="MySpace Icon"
+              className="w-11 h-11 rounded-xl object-cover ring-1 ring-pink-500/50 shadow-md group-hover:scale-105 transition-transform shrink-0"
+            />
             <div className="text-left">
               <h4 className="text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
                 Install MySpace 2008
@@ -91,9 +93,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400 shrink-0">
-                <Smartphone className="w-5 h-5" />
-              </div>
+              <img
+                src="/IMG-20260922-WA2869.jpg"
+                alt="MySpace Icon"
+                className="w-10 h-10 rounded-xl object-cover ring-1 ring-pink-500/40 shadow-md shrink-0"
+              />
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white truncate">Install MySpace 2008 App</p>
                 <p className="text-[11px] text-slate-400 truncate">Instant launch & full offline support</p>
@@ -122,9 +126,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
-                <Smartphone className="w-6 h-6" />
-              </div>
+              <img
+                src="/IMG-20260922-WA2869.jpg"
+                alt="MySpace Icon"
+                className="w-12 h-12 rounded-2xl object-cover ring-1 ring-pink-500/50 shadow-lg shrink-0"
+              />
               <div>
                 <h3 className="text-base font-bold text-white">Install on iPhone / iPad</h3>
                 <p className="text-xs text-pink-400 font-mono">Safari Home Screen App</p>

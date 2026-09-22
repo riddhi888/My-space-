@@ -130,9 +130,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
       >
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
 
-        {/* Retro 2008 Icon */}
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500/20 via-purple-600/30 to-cyan-400/20 border border-pink-500/40 flex items-center justify-center text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.2)]">
-          <Sparkles className="w-8 h-8 text-pink-400 animate-pulse" />
+        {/* Modern Glossy Myspace App Icon */}
+        <div className="relative inline-block mx-auto group">
+          <img
+            src="/IMG-20260922-WA2869.jpg"
+            alt="MySpace App Icon"
+            className="w-20 h-20 mx-auto rounded-3xl object-cover shadow-[0_0_35px_rgba(168,85,247,0.45)] ring-2 ring-purple-500/50 group-hover:scale-105 group-hover:ring-pink-500/70 transition-all duration-300"
+          />
+          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-pink-500 to-cyan-400 opacity-20 blur-md -z-10 group-hover:opacity-40 transition-opacity" />
         </div>
 
         {/* Required message */}

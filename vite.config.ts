@@ -42,7 +42,7 @@ export default defineConfig(() => {
       jsFallbackPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg', 'IMG-20260922-WA2869.jpg'],
         manifest: {
           id: '/',
           name: 'MySpace 2008',
@@ -55,6 +55,18 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
+              src: '/IMG-20260922-WA2869.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg',
+              purpose: 'any',
+            },
+            {
+              src: '/IMG-20260922-WA2869.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg',
+              purpose: 'maskable',
+            },
+            {
               src: '/pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
@@ -65,12 +77,6 @@ export default defineConfig(() => {
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
-            },
-            {
-              src: '/pwa-maskable-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
             },
           ],
         },

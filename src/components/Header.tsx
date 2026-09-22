@@ -25,17 +25,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full px-3 py-2 bg-[#090714]/95 backdrop-blur-md border-b border-purple-900/50">
       <div className="max-w-md mx-auto flex items-center justify-between">
-        {/* Retro 2008 MySpace Brand Logo */}
+        {/* Modern Glossy App Icon & Brand Logo */}
         <button
           id="myspace-logo-btn"
           onClick={() => onSelectTab('home')}
-          className="flex items-center gap-2 group text-left focus:outline-none cursor-pointer"
+          className="flex items-center gap-2.5 group text-left focus:outline-none cursor-pointer"
         >
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center p-0.5 shadow-sm group-hover:scale-105 transition-all">
-            <div className="w-full h-full bg-[#0d0a1a] rounded-[6px] flex items-center justify-center font-bold text-white text-[11px] font-mono">
-              MS
-            </div>
-          </div>
+          <img
+            src="/IMG-20260922-WA2869.jpg"
+            alt="MySpace Icon"
+            className="w-8 h-8 rounded-xl object-cover shadow-[0_0_15px_rgba(168,85,247,0.35)] ring-1 ring-purple-500/50 group-hover:scale-105 group-hover:ring-pink-500/70 transition-all"
+          />
           <div className="flex items-baseline gap-1.5">
             <span className="font-display font-extrabold text-base tracking-tight text-white group-hover:text-pink-300 transition-colors">
               MySpace

@@ -106,17 +106,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* Neon Logo & Header */}
         <div className="text-center space-y-2">
           <div className="relative inline-block">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 p-0.5 shadow-[0_0_30px_rgba(236,72,153,0.5)]">
-              <div className="w-full h-full bg-[#0b0818] rounded-[14px] flex items-center justify-center font-display font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-400">
-                M
-              </div>
-            </div>
-            <Sparkles className="w-4 h-4 text-cyan-300 absolute -top-1 -right-1 animate-pulse" />
+            <img
+              src="/IMG-20260922-WA2869.jpg"
+              alt="MySpace Icon"
+              className="w-20 h-20 mx-auto rounded-3xl object-cover shadow-[0_0_35px_rgba(236,72,153,0.45)] ring-2 ring-purple-500/50"
+            />
+            <Sparkles className="w-5 h-5 text-cyan-300 absolute -top-1.5 -right-1.5 animate-pulse" />
           </div>
 
           <div>
             <h1 className="font-display font-extrabold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400 tracking-tight">
-              MySpace Cyber
+              MySpace 2008
             </h1>
             <p className="text-xs text-slate-400">
               100% Demo Mode • Guest Access Only

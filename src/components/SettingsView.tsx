@@ -1431,15 +1431,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* About MySpace Section */}
         <div className="p-5 rounded-3xl bg-gradient-to-br from-[#140e2b] to-[#0c071a] border border-purple-800/40 space-y-3">
           <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400">
-                <Info className="w-4 h-4" />
+            <div className="flex items-center gap-3">
+              <img
+                src="/IMG-20260922-WA2869.jpg"
+                alt="MySpace App Icon"
+                className="w-10 h-10 rounded-xl object-cover ring-1 ring-purple-500/50 shadow-md"
+              />
+              <div>
+                <h3 className="font-display font-bold text-white text-sm leading-tight">About MySpace</h3>
+                <span className="text-[10px] font-mono text-pink-400 uppercase tracking-wider">
+                  v2.7.0 NEON PRIVACY
+                </span>
               </div>
-              <h3 className="font-display font-bold text-white text-sm">About MySpace</h3>
             </div>
-            <span className="text-[10px] font-mono text-pink-400 uppercase tracking-wider">
-              v2.7.0 NEON PRIVACY
-            </span>
           </div>
 
           <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
