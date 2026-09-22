@@ -1,43 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Music, Volume2, VolumeX, Disc } from 'lucide-react';
+import React from 'react';
+import { Play, Pause, SkipForward, SkipBack, Music, Volume2, VolumeX, Disc, Maximize2, ExternalLink } from 'lucide-react';
 import { MusicTrack } from '../types';
+import { useMusic } from '../context/MusicContext';
 
 interface MusicCardProps {
-  tracks: MusicTrack[];
+  tracks?: MusicTrack[];
+  onOpenFullPlayer?: () => void;
 }
 
-export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(25);
-  const [isMuted, setIsMuted] = useState(false);
+export const MusicCard: React.FC<MusicCardProps> = ({ onOpenFullPlayer }) => {
+  const {
+    currentTrack,
+    isPlaying,
+    currentTime,
+    duration,
+    togglePlay,
+    nextTrack,
+    prevTrack,
+    seekTo,
+    isMuted,
+    toggleMute,
+    openExternalProvider,
+  } = useMusic();
 
-  const track = tracks[currentTrackIndex] || tracks[0];
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const isLicensedOnly = currentTrack.isPlayableInApp === false || !currentTrack.audioUrl;
 
-  useEffect(() => {
-    let timer: any;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            setCurrentTrackIndex((idx) => (idx + 1) % tracks.length);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 600);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, tracks.length]);
-
-  const handleNext = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
-    setProgress(0);
-  };
-
-  const handlePrev = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
-    setProgress(0);
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   return (
@@ -48,16 +41,24 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
 
       <div className="relative z-10 flex items-center gap-3.5">
         {/* Track Cover with rotating vinyl effect */}
-        <div className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+        <div
+          onClick={onOpenFullPlayer}
+          className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.3)] cursor-pointer group"
+          title="Open Music Player"
+        >
           <img
-            src={track.cover}
-            alt={track.title}
+            src={currentTrack.cover || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80'}
+            alt={currentTrack.title}
             referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover transition-transform duration-700 ${isPlaying ? 'scale-105' : ''}`}
+            className={`w-full h-full object-cover transition-transform duration-700 ${
+              isPlaying ? 'scale-105' : 'group-hover:scale-105'
+            }`}
           />
           <div className="absolute inset-0 bg-black/20" />
           <div className="absolute bottom-1 right-1">
-            <Disc className={`w-4 h-4 text-pink-400 ${isPlaying ? 'animate-spin' : ''}`} />
+            <Disc
+              className={`w-4 h-4 text-pink-400 ${isPlaying ? 'animate-[spin_3s_linear_infinite]' : ''}`}
+            />
           </div>
         </div>
 
@@ -65,7 +66,11 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-pink-400 tracking-wider uppercase flex items-center gap-1">
-              <Music className="w-3 h-3" /> Cyber Radio
+              <Music className="w-3 h-3" />
+              <span>International Radio</span>
+              {currentTrack.countryFlag && (
+                <span className="ml-1 text-xs">{currentTrack.countryFlag}</span>
+              )}
             </span>
             {/* Visualizer bars */}
             <div className="flex items-end gap-0.5 h-3.5">
@@ -84,33 +89,42 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
             </div>
           </div>
 
-          <h4 className="font-semibold text-white text-sm truncate mt-0.5">
-            {track.title}
+          <h4
+            onClick={onOpenFullPlayer}
+            className="font-semibold text-white text-sm truncate mt-0.5 cursor-pointer hover:text-pink-300 transition-colors"
+          >
+            {currentTrack.title}
           </h4>
           <p className="text-xs text-cyan-300 truncate">
-            {track.artist}
+            {currentTrack.artist}
+            {currentTrack.language && (
+              <span className="text-slate-400"> • {currentTrack.language}</span>
+            )}
           </p>
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Bar with seeking */}
       <div className="mt-3 relative">
         <div
           className="h-1.5 w-full bg-purple-950/80 rounded-full overflow-hidden cursor-pointer"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
-            const clickPos = (e.clientX - rect.left) / rect.width;
-            setProgress(Math.round(clickPos * 100));
+            const clickRatio = (e.clientX - rect.left) / rect.width;
+            if (duration > 0) {
+              seekTo(clickRatio * duration);
+            }
           }}
+          title="Seek playback"
         >
           <div
             className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 rounded-full transition-all duration-200"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${progressPercent}%` }}
           />
         </div>
         <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
-          <span>0:{String(Math.floor((progress / 100) * 45)).padStart(2, '0')}</span>
-          <span>{track.duration}</span>
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
         </div>
       </div>
 
@@ -118,7 +132,7 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
       <div className="flex items-center justify-between mt-2 pt-1 border-t border-purple-900/30">
         <button
           id="music-mute-toggle-btn"
-          onClick={() => setIsMuted(!isMuted)}
+          onClick={toggleMute}
           className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-purple-900/30 transition-colors"
           title={isMuted ? 'Unmute' : 'Mute'}
         >
@@ -128,7 +142,7 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
         <div className="flex items-center gap-3">
           <button
             id="music-prev-track-btn"
-            onClick={handlePrev}
+            onClick={prevTrack}
             className="p-1.5 text-slate-300 hover:text-pink-400 transition-colors"
             title="Previous Track"
           >
@@ -137,8 +151,8 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
 
           <button
             id="music-play-pause-btn"
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.6)] hover:scale-105 transition-transform"
+            onClick={togglePlay}
+            className="w-9 h-9 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.6)] hover:scale-105 active:scale-95 transition-transform"
             title={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
@@ -150,7 +164,7 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
 
           <button
             id="music-next-track-btn"
-            onClick={handleNext}
+            onClick={nextTrack}
             className="p-1.5 text-slate-300 hover:text-pink-400 transition-colors"
             title="Next Track"
           >
@@ -158,9 +172,29 @@ export const MusicCard: React.FC<MusicCardProps> = ({ tracks }) => {
           </button>
         </div>
 
-        <span className="text-[11px] font-mono text-pink-400 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
-          TRACK {currentTrackIndex + 1}/{tracks.length}
-        </span>
+        {isLicensedOnly ? (
+          <button
+            onClick={() => openExternalProvider(currentTrack, 'youtubeMusic')}
+            className="text-[10px] font-semibold text-red-300 hover:text-red-200 px-2 py-0.5 rounded bg-red-950/40 border border-red-800/40 hover:border-red-600/60 flex items-center gap-1 transition-all"
+            title="Open on YouTube Music"
+          >
+            <span>YouTube</span>
+            <ExternalLink className="w-2.5 h-2.5" />
+          </button>
+        ) : onOpenFullPlayer ? (
+          <button
+            onClick={onOpenFullPlayer}
+            className="text-[11px] font-mono text-pink-400 hover:text-pink-300 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20 hover:border-pink-500/50 flex items-center gap-1 transition-all"
+            title="Open Full Music Player"
+          >
+            <span>PLAYER</span>
+            <Maximize2 className="w-3 h-3" />
+          </button>
+        ) : (
+          <span className="text-[11px] font-mono text-pink-400 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
+            HI-FI
+          </span>
+        )}
       </div>
     </div>
   );

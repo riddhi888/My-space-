@@ -1,6 +1,9 @@
 {
-  "name": "MySpace",
-  "description": "A modern mobile-first social and entertainment app with a neon aesthetic featuring home hubs, chat, social feeds, mini-games, and profile.",
-  "requestFramePermissions": [],
+  "name": "MySpace 2008",
+  "description": "MySpace 2008 - A modern mobile-first social and entertainment app with a neon aesthetic featuring home hubs, interactive music player, chat, voice and video calling, reels, mini-games, notifications feed, and settings.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

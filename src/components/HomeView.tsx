@@ -1,455 +1,177 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Search,
-  Instagram,
-  Facebook,
-  Youtube,
-  MessageSquare,
-  Film,
-  Music,
-  Gamepad2,
-  Bell,
-  ChevronRight,
-  Flame,
-  Radio,
+  User,
   Sparkles,
-  TrendingUp,
+  Edit3,
+  ExternalLink,
+  ArrowRight,
 } from 'lucide-react';
-import { Friend, ChatThread, Reel, MusicTrack, TabType } from '../types';
-import { MusicCard } from './MusicCard';
+import { TabType, UserProfile, ProfileMoodType } from '../types';
+import { MOOD_OPTIONS } from './ProfileView';
+import { ProfileHeaderSocialLinks } from './SocialIcons';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HomeViewProps {
+  currentUser?: UserProfile;
   onSelectTab: (tab: TabType) => void;
-  onlineFriends: Friend[];
-  recentChats: ChatThread[];
-  reels: Reel[];
-  tracks: MusicTrack[];
-  onOpenReels: () => void;
-  onOpenYouTube: () => void;
-  onOpenStory: (friend: Friend) => void;
-  onOpenChatThread: (chatId: string) => void;
-  onOpenNotifications: () => void;
-  unreadNotificationsCount: number;
+  onOpenEditProfile: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
+  currentUser,
   onSelectTab,
-  onlineFriends,
-  recentChats,
-  reels,
-  tracks,
-  onOpenReels,
-  onOpenYouTube,
-  onOpenStory,
-  onOpenChatThread,
-  onOpenNotifications,
-  unreadNotificationsCount,
+  onOpenEditProfile,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'social' | 'entertainment'>('all');
+  // Load real mood from localStorage or profile
+  const moodStorageKey = `myspace_user_mood_${currentUser?.id || 'default'}`;
+  const savedMood =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem(moodStorageKey) as ProfileMoodType)
+      : null;
+  const currentMood: ProfileMoodType =
+    savedMood && savedMood in MOOD_OPTIONS ? savedMood : 'Creative';
+  const moodConfig = MOOD_OPTIONS[currentMood] || MOOD_OPTIONS.Creative;
 
-  // Entertainment Hubs required by user prompt:
-  // Instagram, Facebook, YouTube, Chat, Reels, Music, Games
-  const hubs = [
-    {
-      id: 'instagram',
-      name: 'Instagram',
-      icon: Instagram,
-      category: 'social',
-      gradient: 'from-pink-500 via-purple-500 to-amber-500',
-      shadow: 'shadow-pink-500/30',
-      badge: 'Photos & Drops',
-      action: () => onSelectTab('social'),
-    },
-    {
-      id: 'facebook',
-      name: 'Facebook',
-      icon: Facebook,
-      category: 'social',
-      gradient: 'from-blue-600 via-indigo-600 to-cyan-500',
-      shadow: 'shadow-blue-500/30',
-      badge: 'Groups & Feed',
-      action: () => onSelectTab('social'),
-    },
-    {
-      id: 'youtube',
-      name: 'YouTube',
-      icon: Youtube,
-      category: 'entertainment',
-      gradient: 'from-red-600 via-rose-600 to-pink-600',
-      shadow: 'shadow-red-500/30',
-      badge: '4K Streams',
-      action: onOpenYouTube,
-    },
-    {
-      id: 'chat',
-      name: 'Chat',
-      icon: MessageSquare,
-      category: 'social',
-      gradient: 'from-cyan-500 via-blue-500 to-indigo-600',
-      shadow: 'shadow-cyan-500/30',
-      badge: 'Live DMs',
-      action: () => onSelectTab('chat'),
-    },
-    {
-      id: 'reels',
-      name: 'Reels',
-      icon: Film,
-      category: 'entertainment',
-      gradient: 'from-fuchsia-500 via-pink-500 to-rose-500',
-      shadow: 'shadow-fuchsia-500/30',
-      badge: 'Shorts & Drops',
-      action: onOpenReels,
-    },
-    {
-      id: 'music',
-      name: 'Music',
-      icon: Music,
-      category: 'entertainment',
-      gradient: 'from-violet-600 via-purple-600 to-pink-600',
-      shadow: 'shadow-purple-500/30',
-      badge: 'Synthwave FM',
-      action: () => {
-        // Scroll to music player card
-        const el = document.getElementById('home-music-section');
-        el?.scrollIntoView({ behavior: 'smooth' });
-      },
-    },
-    {
-      id: 'games',
-      name: 'Games',
-      icon: Gamepad2,
-      category: 'entertainment',
-      gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
-      shadow: 'shadow-teal-500/30',
-      badge: 'Cyber Arcade',
-      action: () => onSelectTab('games'),
-    },
-  ];
-
-  const filteredHubs = hubs.filter(
-    (h) =>
-      (selectedCategory === 'all' || h.category === selectedCategory) &&
-      h.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredChats = recentChats.filter((c) =>
-    c.friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredFriends = onlineFriends.filter((f) =>
-    f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.handle.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const hasUserProfile = Boolean(currentUser?.name && currentUser.name.trim().length > 0);
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* 1. SEARCH BAR */}
-      <div className="px-4 pt-2">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
-          <input
-            id="home-search-input"
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Instagram, YouTube, friends, games..."
-            className="w-full pl-10 pr-10 py-3 rounded-2xl bg-purple-950/30 border border-purple-800/40 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-pink-500 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)] transition-all"
-          />
-          {searchQuery && (
-            <button
-              id="clear-home-search-btn"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 hover:text-white"
-            >
-              CLEAR
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="p-4 pb-24 space-y-4 max-w-md mx-auto">
+      {/* Real User Profile Banner (If user has created a profile) */}
+      {hasUserProfile ? (
+        <section
+          id="home-profile-banner"
+          className="rounded-2xl bg-[#140e2b] border border-purple-800/60 p-4 shadow-lg relative overflow-hidden transition-all duration-300"
+          style={{
+            borderBottom: `3px solid ${moodConfig.borderColor}`,
+            boxShadow: `0 4px 20px ${moodConfig.glow}`,
+          }}
+        >
+          {/* Retro top accent strip */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
 
-      {/* NOTIFICATIONS QUICK ALERT BANNER */}
-      {unreadNotificationsCount > 0 && (
-        <div className="px-4">
-          <div
-            onClick={onOpenNotifications}
-            className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-pink-950/50 via-purple-950/50 to-indigo-950/50 border border-pink-500/40 cursor-pointer shadow-[0_0_20px_rgba(236,72,153,0.2)] hover:border-pink-400 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/50 flex items-center justify-center text-pink-400 animate-pulse">
-                <Bell className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>Notifications</span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-pink-500 text-[10px] text-white font-mono">
-                    {unreadNotificationsCount} NEW
-                  </span>
-                </p>
-                <p className="text-[11px] text-pink-200/80">
-                  Marcus Vance & Elena sent you updates
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-pink-400" />
-          </div>
-        </div>
-      )}
-
-      {/* 2. ONLINE FRIENDS (Stories Carousel with Neon Glowing Rings) */}
-      <div className="space-y-2">
-        <div className="px-4 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <h3 className="font-display font-bold text-sm tracking-wide text-slate-200">
-              Online Friends
-            </h3>
-            <span className="text-xs font-mono text-cyan-400">
-              ({filteredFriends.length})
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400">Tap to view status</span>
-        </div>
-
-        <div className="flex gap-3.5 overflow-x-auto px-4 py-2 no-scrollbar">
-          {filteredFriends.map((friend) => (
-            <button
-              key={friend.id}
-              id={`friend-story-${friend.id}`}
-              onClick={() => onOpenStory(friend)}
-              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
-            >
-              {/* Avatar with glowing animated neon ring */}
-              <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-all">
-                <div className="p-0.5 rounded-full bg-[#090714]">
-                  <img
-                    src={friend.avatar}
-                    alt={friend.name}
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
-                </div>
-                {/* Active status pulse */}
-                <span className="absolute bottom-0 right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_6px_#34d399]" />
-              </div>
-              <span className="text-[11px] font-medium text-slate-300 max-w-[64px] truncate group-hover:text-pink-300">
-                {friend.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 3. ENTERTAINMENT & SOCIAL HUBS (Instagram, Facebook, YouTube, Chat, Reels, Music, Games) */}
-      <div className="px-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
-              <span>Entertainment & Hubs</span>
-              <Sparkles className="w-4 h-4 text-pink-400" />
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Quick access to your social and media channels
-            </p>
-          </div>
-          {/* Category Filter Pills */}
-          <div className="flex bg-purple-950/40 p-1 rounded-xl border border-purple-800/30 text-[10px]">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-2 py-0.5 rounded-lg font-medium transition-colors ${
-                selectedCategory === 'all' ? 'bg-pink-500 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSelectedCategory('social')}
-              className={`px-2 py-0.5 rounded-lg font-medium transition-colors ${
-                selectedCategory === 'social' ? 'bg-pink-500 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Social
-            </button>
-            <button
-              onClick={() => setSelectedCategory('entertainment')}
-              className={`px-2 py-0.5 rounded-lg font-medium transition-colors ${
-                selectedCategory === 'entertainment' ? 'bg-pink-500 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Media
-            </button>
-          </div>
-        </div>
-
-        {/* Hubs Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {filteredHubs.map((hub) => {
-            const Icon = hub.icon;
-            return (
-              <button
-                key={hub.id}
-                id={`hub-card-${hub.id}`}
-                onClick={hub.action}
-                className="relative overflow-hidden p-3.5 rounded-2xl bg-gradient-to-b from-purple-950/40 to-[#0e0a1f] border border-purple-800/40 hover:border-pink-500/50 hover:shadow-[0_0_20px_rgba(236,72,153,0.2)] transition-all text-left group flex items-start justify-between"
-              >
-                {/* Background glow hover */}
-                <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-pink-500/10 rounded-full blur-xl group-hover:bg-pink-500/25 transition-all" />
-
-                <div className="relative z-10">
-                  {/* Hub Icon */}
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${hub.gradient} p-0.5 mb-2.5 shadow-md ${hub.shadow} group-hover:scale-105 transition-transform`}>
-                    <div className="w-full h-full bg-[#0d091d]/80 rounded-[10px] flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-white" />
-                    </div>
-                  </div>
-
-                  <h4 className="font-semibold text-sm text-white group-hover:text-pink-300 transition-colors">
-                    {hub.name}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {hub.badge}
-                  </p>
-                </div>
-
-                <div className="relative z-10 p-1 rounded-full bg-purple-900/30 text-slate-400 group-hover:text-pink-400 group-hover:translate-x-0.5 transition-all">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. REELS SPOTLIGHT PREVIEW */}
-      <div className="px-4 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-rose-400" />
-            <h3 className="font-display font-bold text-sm tracking-wide text-white">
-              Trending Reels
-            </h3>
-          </div>
-          <button
-            id="view-all-reels-btn"
-            onClick={onOpenReels}
-            className="text-xs font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
-          >
-            Open Reels <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
-          {reels.map((reel) => (
+          <div className="flex items-center gap-3.5">
+            {/* Real Avatar */}
             <div
-              key={reel.id}
-              id={`reel-preview-${reel.id}`}
-              onClick={onOpenReels}
-              className="relative w-32 h-48 rounded-2xl overflow-hidden shrink-0 border border-purple-800/40 cursor-pointer group shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all"
+              onClick={() => onSelectTab('profile')}
+              className="relative shrink-0 cursor-pointer group"
+              title="View Your Profile"
             >
-              <img
-                src={reel.videoThumbnail}
-                alt={reel.caption}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-              
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-pink-500/80 text-[9px] font-bold text-white flex items-center gap-0.5">
-                <Radio className="w-2.5 h-2.5" /> REEL
-              </div>
-
-              <div className="absolute bottom-2 left-2 right-2">
-                <p className="text-[10px] font-semibold text-white truncate">
-                  {reel.creator.name}
-                </p>
-                <p className="text-[9px] text-pink-300 truncate">
-                  ❤️ {reel.likes}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 5. INTERACTIVE MUSIC PLAYER WIDGET */}
-      <div id="home-music-section" className="px-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-cyan-400" />
-            <h3 className="font-display font-bold text-sm tracking-wide text-white">
-              Synth & Cyber Beats
-            </h3>
-          </div>
-          <span className="text-[11px] text-cyan-400 font-mono">LIVE AUDIO</span>
-        </div>
-        <MusicCard tracks={tracks} />
-      </div>
-
-      {/* 6. RECENT CHATS (with direct open conversation) */}
-      <div className="px-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-pink-400" />
-            <h3 className="font-display font-bold text-sm tracking-wide text-white">
-              Recent Chats
-            </h3>
-          </div>
-          <button
-            id="see-all-chats-btn"
-            onClick={() => onSelectTab('chat')}
-            className="text-xs font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
-          >
-            All Chats <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          {filteredChats.slice(0, 3).map((chat) => (
-            <div
-              key={chat.id}
-              id={`home-chat-${chat.id}`}
-              onClick={() => onOpenChatThread(chat.id)}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 hover:bg-purple-900/30 cursor-pointer transition-all"
-            >
-              {/* Avatar */}
-              <div className="relative shrink-0">
+              {currentUser?.avatar ? (
                 <img
-                  src={chat.friend.avatar}
-                  alt={chat.friend.name}
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
                   referrerPolicy="no-referrer"
-                  className="w-12 h-12 rounded-full object-cover border border-purple-600/40"
+                  className="w-14 h-14 rounded-xl object-cover border-2 border-pink-500/70 group-hover:scale-105 transition-transform shadow-md"
                 />
-                {chat.friend.isOnline && (
-                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
-                )}
-              </div>
-
-              {/* Message preview */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-sm text-white truncate">
-                    {chat.friend.name}
-                  </h4>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {chat.timestamp}
-                  </span>
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-purple-950/80 border-2 border-pink-500/70 flex items-center justify-center text-pink-400 group-hover:scale-105 transition-transform shadow-md">
+                  <User className="w-7 h-7" />
                 </div>
-                <p className="text-xs text-slate-300 truncate mt-0.5">
-                  {chat.lastMessage}
-                </p>
+              )}
+              <span
+                className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#140e2b] shadow-[0_0_6px_#34d399]"
+                title="Online Now"
+              />
+            </div>
+
+            {/* Real User Details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <div className="min-w-0">
+                  <h2
+                    onClick={() => onSelectTab('profile')}
+                    className="font-display font-bold text-base text-white truncate cursor-pointer hover:text-pink-300 transition-colors"
+                  >
+                    {currentUser?.name}
+                  </h2>
+                  {currentUser?.handle && (
+                    <p className="text-[11px] text-cyan-300 font-mono truncate">
+                      {currentUser.handle}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  id="home-edit-profile-btn"
+                  onClick={onOpenEditProfile}
+                  className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all cursor-pointer shrink-0"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
 
-              {/* Unread badge */}
-              {chat.unreadCount > 0 && (
-                <div className="w-5 h-5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(236,72,153,0.8)]">
-                  {chat.unreadCount}
+              {/* Real Mood */}
+              <div
+                onClick={() => onSelectTab('profile')}
+                className="text-xs text-slate-300 mt-1 truncate cursor-pointer hover:text-white transition-colors flex items-center gap-1"
+                title="Click to change mood in Profile"
+              >
+                <span className="text-pink-400 font-semibold">Mood:</span>
+                <span>{moodConfig.emoji}</span>
+                <span className="font-medium">{currentMood}</span>
+              </div>
+
+              {/* Real Social Links */}
+              {currentUser?.socialLinks && (
+                <div className="mt-2">
+                  <ProfileHeaderSocialLinks socialLinks={currentUser.socialLinks} size="sm" />
                 </div>
               )}
             </div>
-          ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Main Home Welcome Screen / Empty State */}
+      <section
+        id="home-welcome-card"
+        className="rounded-2xl bg-[#140e2b]/90 border border-purple-800/70 p-6 text-center space-y-4 shadow-xl relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
+
+        {/* Retro 2008 Icon */}
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500/20 via-purple-600/30 to-cyan-400/20 border border-pink-500/40 flex items-center justify-center text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.2)]">
+          <Sparkles className="w-8 h-8 text-pink-400 animate-pulse" />
         </div>
-      </div>
+
+        {/* Required message */}
+        <div className="space-y-1.5">
+          <h1 className="font-display font-extrabold text-lg text-white tracking-tight">
+            Welcome to MySpace 2008! Edit your profile to start
+          </h1>
+          <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+            Customize your 2008 retro identity with your real display name, mood, profile photo, and social links.
+          </p>
+        </div>
+
+        {/* Edit Profile Button */}
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+          <button
+            id="home-start-edit-profile-btn"
+            onClick={onOpenEditProfile}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 hover:from-pink-400 hover:to-cyan-400 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(236,72,153,0.4)] transition-all cursor-pointer active:scale-98"
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>Edit Profile</span>
+            <ArrowRight className="w-4 h-4 ml-0.5" />
+          </button>
+
+          {hasUserProfile && (
+            <button
+              id="home-view-profile-btn"
+              onClick={() => onSelectTab('profile')}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-purple-950/60 hover:bg-purple-900 border border-purple-700/50 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5 text-pink-400" />
+              <span>View Profile</span>
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Mobile App Install Card */}
+      <PWAInstallButton variant="banner" />
     </div>
   );
 };
