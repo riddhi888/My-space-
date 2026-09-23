@@ -1,0 +1,8 @@
+{
+	"appId": "com.myspace.app",
+	"appName": "MySpace",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	}
+}
