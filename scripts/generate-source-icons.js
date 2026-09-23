@@ -3,140 +3,216 @@ import path from 'path';
 import sharp from 'sharp';
 
 const assetsDir = path.resolve('assets');
+const publicDir = path.resolve('public');
 if (!fs.existsSync(assetsDir)) {
   fs.mkdirSync(assetsDir, { recursive: true });
 }
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
 
 // 1. Background SVG (1024x1024)
-// Rich dark theme matching the app's aesthetic (#090714) with subtle glowing radial gradients
+// Rich dark cosmic theme (#090714) with glowing radial nebula gradients matching the MySpace aesthetic
 const backgroundSvg = `
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="bgGrad" cx="50%" cy="40%" r="75%">
-      <stop offset="0%" stop-color="#1c133a"/>
-      <stop offset="45%" stop-color="#0f0c24"/>
-      <stop offset="100%" stop-color="#070510"/>
+    <radialGradient id="bgBase" cx="50%" cy="46%" r="75%">
+      <stop offset="0%" stop-color="#191136"/>
+      <stop offset="42%" stop-color="#0e0a22"/>
+      <stop offset="100%" stop-color="#070512"/>
     </radialGradient>
-    <radialGradient id="neonGlow" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.3"/>
-      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    <radialGradient id="centerNebula" cx="50%" cy="45%" r="52%">
+      <stop offset="0%" stop-color="#9333ea" stop-opacity="0.32"/>
+      <stop offset="36%" stop-color="#3b82f6" stop-opacity="0.20"/>
+      <stop offset="70%" stop-color="#06b6d4" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#070512" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="gridGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.12"/>
+    <radialGradient id="bottomNeon" cx="50%" cy="92%" r="45%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#070512" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="edgeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#f43f5e" stop-opacity="0.15"/>
     </linearGradient>
   </defs>
 
   <!-- Deep cosmic background -->
-  <rect width="1024" height="1024" fill="url(#bgGrad)"/>
-  <rect width="1024" height="1024" fill="url(#neonGlow)"/>
+  <rect width="1024" height="1024" fill="url(#bgBase)"/>
+  <rect width="1024" height="1024" fill="url(#centerNebula)"/>
+  <rect width="1024" height="1024" fill="url(#bottomNeon)"/>
 
-  <!-- Subtle ambient rings for 2008 retro-futuristic depth -->
-  <circle cx="512" cy="450" r="320" fill="none" stroke="url(#gridGlow)" stroke-width="2" stroke-dasharray="8 12"/>
-  <circle cx="512" cy="450" r="380" fill="none" stroke="url(#gridGlow)" stroke-width="1.5" stroke-opacity="0.5"/>
+  <!-- Subtle ambient outer rim halo -->
+  <rect x="8" y="8" width="1008" height="1008" rx="220" fill="none" stroke="url(#edgeGlow)" stroke-width="6"/>
 </svg>
 `;
 
-// 2. Foreground SVG (1024x1024) - Adaptive Icon Safe Zone is within central 66% (diameter ~676px)
-// MySpace 2008 classic 3-person silhouette emblem + "myspace" text
+// 2. Foreground SVG (1024x1024) - Transparent background with custom MySpace emblem
+// Features: Two humanoid figures forming the "M", angled neon orbital ring, 4-pointed sparkle star, and "Myspace" wordmark
 const foregroundSvg = `
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Vibrant MySpace 2008 neon gradient -->
-    <linearGradient id="bodyGradCenter" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff3b88"/>
-      <stop offset="50%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#00d2ff"/>
-    </linearGradient>
-    
-    <linearGradient id="bodyGradSide" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.85"/>
-      <stop offset="50%" stop-color="#7c3aed" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.85"/>
+    <!-- Left figure cyan gradient -->
+    <linearGradient id="leftCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="45%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
     </linearGradient>
 
-    <!-- Gloss highlight filter -->
-    <linearGradient id="glossGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <!-- Right figure magenta/purple gradient -->
+    <linearGradient id="rightMagentaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="40%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#9333ea"/>
     </linearGradient>
 
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
-      <feDropShadow dx="0" dy="0" stdDeviation="20" flood-color="#a855f7" flood-opacity="0.4"/>
+    <!-- Orbital ring gradient -->
+    <linearGradient id="orbitRingGrad" x1="0%" y1="70%" x2="100%" y2="30%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#ff3388"/>
+    </linearGradient>
+
+    <!-- Glowing filters -->
+    <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
-    <filter id="textGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.7"/>
+
+    <filter id="starGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
+
+    <filter id="emblemShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#000000" flood-opacity="0.6"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="20" flood-color="#a855f7" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Clipping for 3D orbital wrap effect -->
+    <clipPath id="backRingClip">
+      <rect x="0" y="0" width="1024" height="435"/>
+    </clipPath>
+    <clipPath id="frontRingClip">
+      <rect x="0" y="435" width="1024" height="589"/>
+    </clipPath>
   </defs>
 
-  <g filter="url(#softShadow)">
-    <!-- LEFT COMPANION (Silhouette 1) -->
-    <g opacity="0.92">
-      <!-- Head -->
-      <circle cx="340" cy="345" r="62" fill="url(#bodyGradSide)"/>
-      <circle cx="340" cy="345" r="62" fill="url(#glossGrad)"/>
-      <!-- Shoulders / Torso -->
-      <path d="M 235 480 C 235 410, 275 390, 340 390 C 405 390, 445 410, 445 480 L 445 525 C 445 535, 437 540, 425 540 L 255 540 C 243 540, 235 535, 235 525 Z"
-            fill="url(#bodyGradSide)"/>
-      <path d="M 235 480 C 235 410, 275 390, 340 390 C 405 390, 445 410, 445 480 L 445 525 C 445 535, 437 540, 425 540 L 255 540 C 243 540, 235 535, 235 525 Z"
-            fill="url(#glossGrad)"/>
+  <g transform="translate(0, -10)">
+    <!-- 1. BACK SECTION OF ORBITAL RING (passes behind heads) -->
+    <g clip-path="url(#backRingClip)">
+      <ellipse cx="512" cy="460" rx="325" ry="105"
+               fill="none" stroke="url(#orbitRingGrad)" stroke-width="26"
+               transform="rotate(-18 512 460)"
+               filter="url(#ringGlow)" stroke-linecap="round" opacity="0.85"/>
     </g>
 
-    <!-- RIGHT COMPANION (Silhouette 3) -->
-    <g opacity="0.92">
-      <!-- Head -->
-      <circle cx="684" cy="345" r="62" fill="url(#bodyGradSide)"/>
-      <circle cx="684" cy="345" r="62" fill="url(#glossGrad)"/>
-      <!-- Shoulders / Torso -->
-      <path d="M 579 480 C 579 410, 619 390, 684 390 C 749 390, 789 410, 789 480 L 789 525 C 789 535, 781 540, 769 540 L 599 540 C 587 540, 579 535, 579 525 Z"
-            fill="url(#bodyGradSide)"/>
-      <path d="M 579 480 C 579 410, 619 390, 684 390 C 749 390, 789 410, 789 480 L 789 525 C 789 535, 781 540, 769 540 L 599 540 C 587 540, 579 535, 579 525 Z"
-            fill="url(#glossGrad)"/>
+    <!-- 2. TWO FIGURES FORMING THE ICONIC 'M' -->
+    <g filter="url(#emblemShadow)">
+      <!-- Left Cyan Figure Head -->
+      <circle cx="395" cy="295" r="62" fill="url(#leftCyanGrad)"/>
+      <circle cx="395" cy="295" r="62" fill="#ffffff" opacity="0.15"/>
+      <circle cx="395" cy="295" r="63" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.5"/>
+
+      <!-- Right Purple/Magenta Figure Head -->
+      <circle cx="629" cy="295" r="62" fill="url(#rightMagentaGrad)"/>
+      <circle cx="629" cy="295" r="62" fill="#ffffff" opacity="0.15"/>
+      <circle cx="629" cy="295" r="63" fill="none" stroke="#f472b6" stroke-width="2" stroke-opacity="0.5"/>
+
+      <!-- Left Figure Torso / M left wing -->
+      <path d="
+        M 310 590
+        C 305 445, 342 368, 395 368
+        C 438 368, 468 422, 512 485
+        C 512 515, 502 538, 472 490
+        C 442 435, 412 435, 384 435
+        C 358 490, 338 595, 338 595
+        C 324 605, 310 600, 310 590 Z
+      " fill="url(#leftCyanGrad)"/>
+
+      <!-- Right Figure Torso / M right wing -->
+      <path d="
+        M 512 485
+        C 556 422, 586 368, 629 368
+        C 682 368, 719 445, 714 590
+        C 714 600, 700 605, 686 595
+        C 666 490, 640 435, 612 435
+        C 582 435, 552 490, 512 540
+        Z
+      " fill="url(#rightMagentaGrad)"/>
+
+      <!-- Center seamless joint bridge -->
+      <path d="
+        M 488 470
+        C 502 458, 522 458, 536 470
+        C 542 505, 520 535, 512 540
+        C 504 535, 482 505, 488 470 Z
+      " fill="#9d4edd" opacity="0.85"/>
     </g>
 
-    <!-- CENTER HERO (Silhouette 2) -->
+    <!-- 3. FRONT SECTION OF ORBITAL RING (sweeps in front of figures) -->
+    <g clip-path="url(#frontRingClip)">
+      <!-- Glowing base band -->
+      <ellipse cx="512" cy="460" rx="325" ry="105"
+               fill="none" stroke="url(#orbitRingGrad)" stroke-width="26"
+               transform="rotate(-18 512 460)"
+               filter="url(#ringGlow)" stroke-linecap="round"/>
+      <!-- Brilliant white core highlight line -->
+      <ellipse cx="512" cy="460" rx="325" ry="105"
+               fill="none" stroke="#ffffff" stroke-width="8" stroke-opacity="0.9"
+               transform="rotate(-18 512 460)" stroke-linecap="round"/>
+    </g>
+
+    <!-- 4. 4-POINTED SPARKLE STAR (Upper Right) -->
+    <g transform="translate(768, 255)" filter="url(#starGlow)">
+      <!-- Diamond Star Glow Halo -->
+      <path d="M 0 -42 Q 0 0 42 0 Q 0 0 0 42 Q 0 0 -42 0 Q 0 0 0 -42 Z" fill="#c084fc" opacity="0.85"/>
+      <!-- Inner Brilliant Core -->
+      <path d="M 0 -26 Q 0 0 26 0 Q 0 0 0 26 Q 0 0 -26 0 Q 0 0 0 -26 Z" fill="#ffffff"/>
+      <!-- Center Star Sparkle -->
+      <circle cx="0" cy="0" r="6" fill="#ffffff"/>
+    </g>
+
+    <!-- 5. "Myspace" WORDMARK -->
     <g>
-      <!-- Head -->
-      <circle cx="512" cy="295" r="82" fill="url(#bodyGradCenter)"/>
-      <circle cx="512" cy="295" r="82" fill="url(#glossGrad)"/>
-      <!-- Subtle head outline/ring for crisp separation -->
-      <circle cx="512" cy="295" r="83" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
-      
-      <!-- Torso with iconic smooth shoulders -->
-      <path d="M 375 470 C 375 375, 430 350, 512 350 C 594 350, 649 375, 649 470 L 649 535 C 649 548, 638 555, 624 555 L 400 555 C 386 555, 375 548, 375 535 Z"
-            fill="url(#bodyGradCenter)"/>
-      <path d="M 375 470 C 375 375, 430 350, 512 350 C 594 350, 649 375, 649 470 L 649 535 C 649 548, 638 555, 624 555 L 400 555 C 386 555, 375 548, 375 535 Z"
-            fill="url(#glossGrad)"/>
-      <!-- Separation outline -->
-      <path d="M 375 470 C 375 375, 430 350, 512 350 C 594 350, 649 375, 649 470"
-            fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.6"/>
+      <!-- Shadow layer for high-contrast visibility -->
+      <text x="512" y="736"
+            text-anchor="middle"
+            font-family="'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif"
+            font-size="78"
+            font-weight="800"
+            letter-spacing="-1.2"
+            fill="#000000"
+            opacity="0.75">
+        Myspace
+      </text>
+      <!-- Crisp White Brand Title matching the reference logo -->
+      <text x="512" y="732"
+            text-anchor="middle"
+            font-family="'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif"
+            font-size="78"
+            font-weight="800"
+            letter-spacing="-1.2"
+            fill="#ffffff">
+        Myspace
+      </text>
     </g>
-  </g>
-
-  <!-- Sparkle star accents (matching MySpace 2008 & App branding) -->
-  <g fill="#ffffff">
-    <!-- Star 1 top right -->
-    <path d="M 740 240 Q 740 260 760 260 Q 740 260 740 280 Q 740 260 720 260 Q 740 260 740 240 Z" fill="#38bdf8" opacity="0.9"/>
-    <!-- Star 2 top left -->
-    <path d="M 280 265 Q 280 278 293 278 Q 280 278 280 291 Q 280 278 267 278 Q 280 278 280 265 Z" fill="#f472b6" opacity="0.9"/>
-  </g>
-
-  <!-- "myspace" wordmark badge -->
-  <g filter="url(#textGlow)">
-    <!-- Pill background for typography -->
-    <rect x="292" y="605" width="440" height="74" rx="37" fill="#0b0819" stroke="url(#bodyGradCenter)" stroke-width="3"/>
-    
-    <text x="512" y="654" text-anchor="middle" font-family="'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" letter-spacing="-1">
-      <tspan fill="#f43f5e">my</tspan><tspan fill="#ffffff">space</tspan><tspan fill="#38bdf8" font-size="28" font-weight="600" dx="4">®</tspan>
-    </text>
   </g>
 </svg>
 `;
 
-// 3. Combined Full Icon SVG (1024x1024)
-// Background + Emblem for legacy icon generation & app store previews
+// 3. Full Combined Master Icon SVG (1024x1024)
 const fullIconSvg = `
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   ${backgroundSvg.replace('<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">', '').replace('</svg>', '')}
@@ -145,44 +221,78 @@ const fullIconSvg = `
 `;
 
 async function main() {
-  console.log('Generating 1024x1024 PNG source assets...');
+  console.log('Generating 1024x1024 PNG source assets for Capacitor Android...');
   
-  // icon-background.png (1024x1024)
+  // 1. icon-background.png (1024x1024)
   await sharp(Buffer.from(backgroundSvg))
     .resize(1024, 1024)
     .png()
     .toFile(path.join(assetsDir, 'icon-background.png'));
   console.log('Created assets/icon-background.png (1024x1024)');
 
-  // icon-foreground.png (1024x1024)
+  // 2. icon-foreground.png (1024x1024) - with transparent background
   await sharp(Buffer.from(foregroundSvg))
     .resize(1024, 1024)
     .png()
     .toFile(path.join(assetsDir, 'icon-foreground.png'));
   console.log('Created assets/icon-foreground.png (1024x1024)');
 
-  // icon-only.png (1024x1024)
-  await sharp(Buffer.from(foregroundSvg))
+  // 3. icon-only.png (1024x1024) - full composite icon for legacy non-adaptive icon generation
+  await sharp(Buffer.from(fullIconSvg))
     .resize(1024, 1024)
     .png()
     .toFile(path.join(assetsDir, 'icon-only.png'));
   console.log('Created assets/icon-only.png (1024x1024)');
 
-  // icon.png (1024x1024)
+  // 4. icon.png (1024x1024) - master icon
   await sharp(Buffer.from(fullIconSvg))
     .resize(1024, 1024)
     .png()
     .toFile(path.join(assetsDir, 'icon.png'));
   console.log('Created assets/icon.png (1024x1024)');
 
-  // logo.png (1024x1024)
+  // 5. logo.png (1024x1024) - master logo
   await sharp(Buffer.from(fullIconSvg))
     .resize(1024, 1024)
     .png()
     .toFile(path.join(assetsDir, 'logo.png'));
   console.log('Created assets/logo.png (1024x1024)');
 
-  // Also create splash.png (2732x2732)
+  // Also sync to public directory for web favicon & PWA
+  fs.copyFileSync(path.join(assetsDir, 'icon.png'), path.join(publicDir, 'icon.png'));
+  fs.copyFileSync(path.join(assetsDir, 'logo.png'), path.join(publicDir, 'logo.png'));
+
+  // Generate responsive PWA icons
+  await sharp(path.join(assetsDir, 'icon.png'))
+    .resize(192, 192)
+    .png()
+    .toFile(path.join(publicDir, 'icon-192.png'));
+  fs.copyFileSync(path.join(publicDir, 'icon-192.png'), path.join(publicDir, 'pwa-192x192.png'));
+
+  await sharp(path.join(assetsDir, 'icon.png'))
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(publicDir, 'icon-512.png'));
+  fs.copyFileSync(path.join(publicDir, 'icon-512.png'), path.join(publicDir, 'pwa-512x512.png'));
+
+  await sharp(path.join(assetsDir, 'icon.png'))
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+
+  const innerSize = Math.round(512 * 0.76);
+  const resizedInner = await sharp(path.join(assetsDir, 'icon.png'))
+    .resize(innerSize, innerSize, { fit: 'contain' })
+    .toBuffer();
+  const maskableBg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><rect width="512" height="512" fill="#090714"/></svg>`;
+  await sharp(Buffer.from(maskableBg))
+    .composite([{ input: resizedInner, gravity: 'center' }])
+    .png()
+    .toFile(path.join(publicDir, 'pwa-maskable-512x512.png'));
+
+  console.log('Synchronized public/ icons and generated PWA responsive icons');
+
+  // 6. splash.png (2732x2732)
   const splashSvg = `
 <svg width="2732" height="2732" viewBox="0 0 2732 2732" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -191,9 +301,9 @@ async function main() {
       <stop offset="50%" stop-color="#0d0a1d"/>
       <stop offset="100%" stop-color="#05040a"/>
     </radialGradient>
-    <radialGradient id="splashGlow" cx="50%" cy="45%" r="40%">
-      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.35"/>
-      <stop offset="60%" stop-color="#8b5cf6" stop-opacity="0.15"/>
+    <radialGradient id="splashGlow" cx="50%" cy="45%" r="42%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#8b5cf6" stop-opacity="0.14"/>
       <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
     </radialGradient>
   </defs>

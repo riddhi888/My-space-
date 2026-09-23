@@ -16,15 +16,18 @@ import {
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { HomeView } from './components/HomeView';
+import { MusicView } from './components/MusicView';
 import { ChatView } from './components/ChatView';
 import { SocialView } from './components/SocialView';
 import { GamesView } from './components/GamesView';
 import { ProfileView } from './components/ProfileView';
+import { ReelsView } from './components/ReelsView';
 import { ReelsModal } from './components/ReelsModal';
 import { YouTubeModal } from './components/YouTubeModal';
 import { StoryModal } from './components/StoryModal';
 import { NotificationModal } from './components/NotificationModal';
 import { AuthView } from './components/AuthView';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -81,8 +84,8 @@ export default function App() {
   const handleLoginSuccess = (authenticatedUser: UserProfile, message?: string) => {
     setUser(authenticatedUser);
     setIsLoggedIn(true);
-    // Explicit requirement: After login, show the user's own MySpace profile
-    setCurrentTab('profile');
+    // Explicit requirement: After login, show the actual MySpace Home dashboard
+    setCurrentTab('home');
     setActiveChatId(null);
     if (message) {
       showToast(message);
@@ -335,6 +338,19 @@ export default function App() {
               onOpenChatThread={handleOpenChatThread}
               onOpenNotifications={() => setIsNotificationsOpen(true)}
               unreadNotificationsCount={unreadNotificationsCount}
+              currentUser={user}
+              onOpenEditProfile={() => setCurrentTab('profile')}
+            />
+          )}
+
+          {currentTab === 'music' && (
+            <MusicView
+              tracks={mockTracks}
+              currentUser={user}
+              onSetProfileAnthem={(song) => {
+                setUser((prev) => ({ ...prev, profileSong: song }));
+              }}
+              onShowToast={showToast}
             />
           )}
 
@@ -360,16 +376,30 @@ export default function App() {
               onCreatePost={handleCreatePost}
               onShowToast={showToast}
               currentUser={user}
+              onSelectFriendProfile={(name) => {
+                const f = allFriends.find((fr) => fr.name.toLowerCase() === name.toLowerCase());
+                if (f) handleOpenChatWithFriend(f);
+              }}
             />
           )}
 
-          {currentTab === 'games' && <GamesView games={mockGames} />}
+          {currentTab === 'games' && <GamesView games={mockGames} onShowToast={showToast} />}
+
+          {currentTab === 'reels' && (
+            <ReelsView
+              reels={mockReels}
+              onShowToast={showToast}
+            />
+          )}
 
           {currentTab === 'profile' && (
             <ProfileView
               user={user}
+              allFriends={allFriends}
               onOpenChatWithFriend={handleOpenChatWithFriend}
               onUpdateBio={handleUpdateBio}
+              onUpdateProfile={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
+              onSelectTab={(tab) => setCurrentTab(tab)}
               onShowToast={showToast}
               onLogout={handleLogout}
             />
@@ -421,6 +451,9 @@ export default function App() {
           onMarkAllAsRead={handleMarkAllNotificationsRead}
           onDismissNotification={handleDismissNotification}
         />
+
+        {/* Offline Status Toast */}
+        <OfflineIndicator />
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import { CallModal } from './CallModal';
 import { FriendProfileModal } from './FriendProfileModal';
 import { AttachmentModal } from './AttachmentModal';
 import { EmojiPicker } from './EmojiPicker';
+import { UserAvatar } from './UserAvatar';
 
 interface ChatViewProps {
   chatThreads: ChatThread[];
@@ -226,16 +227,12 @@ export const ChatView: React.FC<ChatViewProps> = ({
               className="relative group focus:outline-none"
               title="View Profile"
             >
-              <img
-                src={activeThread.friend.avatar}
-                alt={activeThread.friend.name}
-                referrerPolicy="no-referrer"
-                className="w-10 h-10 rounded-full object-cover border border-purple-500/40 group-hover:border-pink-500 transition-colors"
-              />
-              <span
-                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#090714] ${
-                  activeThread.friend.isOnline ? 'bg-emerald-400' : 'bg-slate-500'
-                }`}
+              <UserAvatar
+                name={activeThread.friend.name}
+                avatar={activeThread.friend.avatar}
+                size="md"
+                isOnline={activeThread.friend.isOnline}
+                showOnline={true}
               />
             </button>
 
@@ -644,13 +641,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   className="flex flex-col items-center gap-1 shrink-0 group focus:outline-none"
                 >
                   <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-cyan-400 to-pink-500 group-hover:scale-105 transition-transform">
-                    <img
-                      src={friend.avatar}
-                      alt={friend.name}
-                      referrerPolicy="no-referrer"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-[#090714]"
+                    <UserAvatar
+                      name={friend.name}
+                      avatar={friend.avatar}
+                      size="md"
+                      isOnline={friend.isOnline}
+                      showOnline={true}
                     />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
                   </div>
                   <span className="text-[11px] text-slate-300 truncate max-w-[60px]">
                     {friend.name.split(' ')[0]}
@@ -674,16 +671,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 className="flex items-center gap-3.5 p-3 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 hover:bg-purple-900/30 cursor-pointer transition-all"
               >
                 {/* Avatar with Status */}
-                <div className="relative shrink-0">
-                  <img
-                    src={thread.friend.avatar}
-                    alt={thread.friend.name}
-                    referrerPolicy="no-referrer"
-                    className="w-13 h-13 rounded-full object-cover border border-purple-600/40"
+                <div className="shrink-0">
+                  <UserAvatar
+                    name={thread.friend.name}
+                    avatar={thread.friend.avatar}
+                    size="md"
+                    isOnline={thread.friend.isOnline}
+                    showOnline={true}
                   />
-                  {thread.friend.isOnline && (
-                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_6px_#34d399]" />
-                  )}
                 </div>
 
                 {/* Preview Text */}
@@ -772,21 +767,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     onClick={() => setSelectedProfileFriend(friend)}
                     className="flex items-center gap-3 cursor-pointer group"
                   >
-                    <div className="relative">
-                      <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        referrerPolicy="no-referrer"
-                        className="w-12 h-12 rounded-full object-cover border border-purple-500/40 group-hover:border-pink-500 transition-colors"
-                      />
-                      <span
-                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#090714] ${
-                          friend.isOnline
-                            ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]'
-                            : 'bg-slate-500'
-                        }`}
-                      />
-                    </div>
+                    <UserAvatar
+                      name={friend.name}
+                      avatar={friend.avatar}
+                      size="md"
+                      isOnline={friend.isOnline}
+                      showOnline={true}
+                    />
 
                     <div>
                       <h4 className="font-semibold text-sm text-white group-hover:text-pink-300 transition-colors flex items-center gap-1.5">

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Bell, Sparkles, LogOut } from 'lucide-react';
 import { TabType, UserProfile } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
+import { UserAvatar } from './UserAvatar';
 
 interface HeaderProps {
   currentTab: TabType;
@@ -38,8 +40,8 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-display font-extrabold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-400">
                 MySpace
               </span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
-                NEON
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 shadow-[0_0_8px_rgba(236,72,153,0.3)]">
+                2008
               </span>
             </div>
           </div>
@@ -47,6 +49,9 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* PWA Install Button */}
+          <PWAInstallButton variant="header" />
+
           {/* Notifications Button */}
           <button
             id="notifications-toggle-btn"
@@ -66,16 +71,16 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="quick-profile-btn"
             onClick={() => onSelectTab('profile')}
-            className="relative w-8 h-8 rounded-full p-0.5 bg-gradient-to-r from-pink-500 to-cyan-400 hover:scale-105 transition-transform focus:outline-none"
+            className="relative rounded-full p-0.5 bg-gradient-to-r from-pink-500 to-cyan-400 hover:scale-105 transition-transform focus:outline-none"
             title={currentUser ? `${currentUser.name} (${currentUser.handle})` : 'My Profile'}
           >
-            <img
-              src={currentUser ? currentUser.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
-              alt={currentUser ? currentUser.name : "User Avatar"}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover rounded-full"
+            <UserAvatar
+              name={currentUser?.name}
+              avatar={currentUser?.avatar}
+              size="sm"
+              isOnline={true}
+              showOnline={true}
             />
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#090714] rounded-full"></span>
           </button>
 
           {/* Logout Shortcut in Header */}

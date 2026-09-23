@@ -1,4 +1,4 @@
-export type TabType = 'home' | 'chat' | 'social' | 'games' | 'profile';
+export type TabType = 'home' | 'music' | 'reels' | 'chat' | 'social' | 'games' | 'profile';
 
 export interface UserProfile {
   id: string;
@@ -6,6 +6,7 @@ export interface UserProfile {
   handle: string;
   email?: string;
   password?: string;
+  statusText?: string;
   avatar: string;
   coverImage: string;
   bio: string;
@@ -92,6 +93,7 @@ export interface SocialPost {
   source: 'Instagram' | 'Facebook' | 'MySpace';
   content: string;
   image?: string;
+  videoUrl?: string;
   timestamp: string;
   likes: number;
   isLiked?: boolean;
@@ -115,11 +117,18 @@ export interface Reel {
     avatar: string;
   };
   videoThumbnail: string;
+  videoUrl?: string;
+  youtubeShortsId?: string;
+  instagramReelId?: string;
+  facebookReelId?: string;
+  embedUrl?: string;
+  platform?: 'youtube' | 'instagram' | 'facebook' | 'myspace';
   caption: string;
   audioTrack: string;
   likes: string;
   comments: string;
   tags: string[];
+  isFollowing?: boolean;
 }
 
 export interface HubItem {
@@ -139,8 +148,9 @@ export interface NotificationItem {
   message: string;
   time: string;
   avatar?: string;
-  type: 'like' | 'chat' | 'game' | 'system' | 'mention';
+  type: 'like' | 'chat' | 'game' | 'system' | 'mention' | 'friend_request';
   isRead: boolean;
+  read?: boolean;
 }
 
 export interface MusicTrack {

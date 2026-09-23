@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Friend } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface FriendProfileModalProps {
   friend: Friend | null;
@@ -89,21 +90,13 @@ export const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
 
           {/* Profile Avatar Overlay */}
           <div className="absolute -bottom-8 left-6 flex items-end gap-3">
-            <div className="relative">
-              <img
-                src={friend.avatar}
-                alt={friend.name}
-                referrerPolicy="no-referrer"
-                className="w-20 h-20 rounded-2xl object-cover border-3 border-[#0e0920] shadow-[0_0_20px_rgba(236,72,153,0.4)]"
-              />
-              <span
-                className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-[#0e0920] ${
-                  friend.isOnline
-                    ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
-                    : 'bg-slate-500'
-                }`}
-              />
-            </div>
+            <UserAvatar
+              name={friend.name}
+              avatar={friend.avatar}
+              size="xl"
+              isOnline={friend.isOnline}
+              showOnline={true}
+            />
           </div>
         </div>
 

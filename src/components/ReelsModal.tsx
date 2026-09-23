@@ -1,6 +1,26 @@
-import React, { useState } from 'react';
-import { X, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, Flame } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import {
+  X,
+  Heart,
+  MessageCircle,
+  Share2,
+  Volume2,
+  VolumeX,
+  Music,
+  Flame,
+  UserPlus,
+  UserCheck,
+  Send,
+  Loader2,
+  AlertCircle,
+  RotateCcw,
+  Youtube,
+  Instagram,
+  Facebook,
+  Sparkles,
+} from 'lucide-react';
 import { Reel } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface ReelsModalProps {
   isOpen: boolean;
@@ -17,13 +37,32 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [isMuted, setIsMuted] = useState(false);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [commentsMap, setCommentsMap] = useState<Record<string, { id: string; user: string; text: string; time: string; avatar: string }[]>>({
+    reel_yt_1: [
+      { id: 'c1', user: 'Tom Anderson', text: 'This synth bass line is incredible! ⚡', time: '10m ago', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
+      { id: 'c2', user: 'Sarah Jenkins', text: 'Night driving vibes forever 🌌', time: '25m ago', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
+    ],
+    reel_ig_2: [
+      { id: 'c3', user: 'David Chen', text: 'The analog modular patch sounds so warm! 🎛️', time: '1h ago', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80' },
+    ],
+  });
+  const [commentInput, setCommentInput] = useState('');
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false);
+  const [hasVideoError, setHasVideoError] = useState(false);
+
+  // Touch swipe tracking
+  const touchStartY = useRef<number | null>(null);
 
   if (!isOpen || reels.length === 0) return null;
 
   const currentReel = reels[currentIndex];
-  const isLiked = likedMap[currentReel.id];
+  const isLiked = !!likedMap[currentReel.id];
+  const isFollowing = !!followingMap[currentReel.creator.handle];
+  const currentComments = commentsMap[currentReel.id] || [];
 
   const handleLike = () => {
     setLikedMap((prev) => ({
@@ -36,28 +75,170 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
     }
   };
 
+  const toggleFollow = (handle: string, name: string) => {
+    setFollowingMap((prev) => {
+      const next = !prev[handle];
+      if (onShowToast) {
+        onShowToast(next ? `Now following ${name}!` : `Unfollowed ${name}`);
+      }
+      return { ...prev, [handle]: next };
+    });
+  };
+
   const handleNext = () => {
+    setHasVideoError(false);
+    setIsLoadingVideo(true);
     setCurrentIndex((prev) => (prev + 1) % reels.length);
+    setTimeout(() => setIsLoadingVideo(false), 250);
   };
 
   const handlePrev = () => {
+    setHasVideoError(false);
+    setIsLoadingVideo(true);
     setCurrentIndex((prev) => (prev - 1 + reels.length) % reels.length);
+    setTimeout(() => setIsLoadingVideo(false), 250);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaY = touchEndY - touchStartY.current;
+
+    // Swiped up -> Next Reel
+    if (deltaY < -50) {
+      handleNext();
+    }
+    // Swiped down -> Prev Reel
+    else if (deltaY > 50) {
+      handlePrev();
+    }
+    touchStartY.current = null;
+  };
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentInput.trim()) return;
+
+    const newComment = {
+      id: `comm_${Date.now()}`,
+      user: 'You',
+      avatar: '',
+      text: commentInput.trim(),
+      time: 'Just now',
+    };
+
+    setCommentsMap((prev) => ({
+      ...prev,
+      [currentReel.id]: [newComment, ...(prev[currentReel.id] || [])],
+    }));
+
+    setCommentInput('');
+    if (onShowToast) onShowToast('Comment posted! 💬');
+  };
+
+  const handleShare = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+    }
+    if (onShowToast) onShowToast('Reel link copied to clipboard! 🔗');
+  };
+
+  const renderPlatformBadge = () => {
+    if (currentReel.platform === 'youtube' || currentReel.youtubeShortsId) {
+      return (
+        <span className="px-2 py-0.5 rounded-full bg-red-600/80 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+          <Youtube className="w-3 h-3" /> YouTube Shorts
+        </span>
+      );
+    }
+    if (currentReel.platform === 'instagram' || currentReel.instagramReelId) {
+      return (
+        <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+          <Instagram className="w-3 h-3" /> Instagram Reel
+        </span>
+      );
+    }
+    if (currentReel.platform === 'facebook' || currentReel.facebookReelId) {
+      return (
+        <span className="px-2 py-0.5 rounded-full bg-blue-600/80 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+          <Facebook className="w-3 h-3" /> Facebook Reel
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-0.5 rounded-full bg-pink-500/80 backdrop-blur-md text-[10px] font-bold text-white flex items-center gap-1 shadow-md">
+        <Sparkles className="w-3 h-3" /> MySpace Reel
+      </span>
+    );
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-0 sm:p-4">
-      {/* Mobile container */}
-      <div className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-purple-800/40 shadow-[0_0_50px_rgba(168,85,247,0.3)]">
-        {/* Background Image / Reel frame simulation */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={currentReel.videoThumbnail}
-            alt={currentReel.caption}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter brightness-90"
-          />
+      {/* Mobile container with vertical touch swipe */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-purple-800/40 shadow-[0_0_50px_rgba(168,85,247,0.3)] select-none"
+      >
+        {/* Background / Video Player Section */}
+        <div className="absolute inset-0 z-0 bg-black">
+          {currentReel.youtubeShortsId && !hasVideoError ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${currentReel.youtubeShortsId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${currentReel.youtubeShortsId}&controls=1`}
+              title={currentReel.caption}
+              className="w-full h-full object-cover"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              onError={() => setHasVideoError(true)}
+            />
+          ) : currentReel.videoUrl && !hasVideoError ? (
+            <video
+              src={currentReel.videoUrl}
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              className="w-full h-full object-cover"
+              onError={() => setHasVideoError(true)}
+            />
+          ) : (
+            <img
+              src={currentReel.videoThumbnail}
+              alt={currentReel.caption}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover filter brightness-90 transition-transform duration-700"
+            />
+          )}
+
+          {/* Gradients */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#090714] via-transparent to-black/60 pointer-events-none" />
         </div>
+
+        {/* Loading State Spinner */}
+        {isLoadingVideo && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
+            <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
+            <span className="text-xs text-slate-300 mt-2 font-mono">Loading Reel...</span>
+          </div>
+        )}
+
+        {/* Error State Fallback */}
+        {hasVideoError && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 p-6 text-center">
+            <AlertCircle className="w-10 h-10 text-rose-400 mb-2" />
+            <h4 className="font-bold text-white text-sm">Previewing Video Reel</h4>
+            <p className="text-xs text-slate-400 mt-1 mb-4">Reel thumbnail is active</p>
+            <button
+              onClick={() => setHasVideoError(false)}
+              className="px-4 py-2 rounded-xl bg-pink-500 text-white text-xs font-semibold flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-4 h-4" /> Reload
+            </button>
+          </div>
+        )}
 
         {/* Top Header Controls */}
         <div className="relative z-10 flex items-center justify-between p-4">
@@ -66,7 +247,8 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
               <Flame className="w-3.5 h-3.5 fill-white" />
               REELS
             </span>
-            <span className="text-xs text-slate-300">
+            {renderPlatformBadge()}
+            <span className="text-xs font-mono text-slate-300 bg-black/40 px-2 py-0.5 rounded-full">
               {currentIndex + 1} / {reels.length}
             </span>
           </div>
@@ -76,13 +258,15 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
               id="reel-mute-btn"
               onClick={() => setIsMuted(!isMuted)}
               className="p-2 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-black/70 transition-colors"
+              title={isMuted ? 'Unmute' : 'Mute'}
             >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-pink-400" />}
+              {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-pink-400" />}
             </button>
             <button
               id="reel-close-btn"
               onClick={onClose}
               className="p-2 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-pink-600/80 transition-colors"
+              title="Close Reels"
             >
               <X className="w-5 h-5" />
             </button>
@@ -98,96 +282,125 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
           </div>
         )}
 
-        {/* Navigation tap areas */}
+        {/* Tap areas for quick prev / next / double tap */}
         <div className="relative z-10 flex-1 flex">
           <div
-            className="w-1/3 h-full cursor-pointer opacity-0 hover:opacity-10 transition-opacity bg-white"
+            className="w-1/4 h-full cursor-pointer"
             onClick={handlePrev}
-            title="Previous Reel"
+            title="Previous Reel (or swipe down)"
           />
           <div
-            className="w-1/3 h-full cursor-pointer"
+            className="w-1/2 h-full cursor-pointer"
             onDoubleClick={handleLike}
           />
           <div
-            className="w-1/3 h-full cursor-pointer opacity-0 hover:opacity-10 transition-opacity bg-white"
+            className="w-1/4 h-full cursor-pointer"
             onClick={handleNext}
-            title="Next Reel"
+            title="Next Reel (or swipe up)"
           />
         </div>
 
         {/* Right side interaction bar */}
         <div className="absolute right-3 bottom-24 z-20 flex flex-col items-center gap-4">
+          {/* Like */}
           <button
             id="reel-like-btn"
             onClick={handleLike}
             className="flex flex-col items-center gap-1 group"
           >
-            <div className={`p-3 rounded-full backdrop-blur-md transition-all ${
-              isLiked
-                ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.8)] scale-110'
-                : 'bg-black/40 text-white group-hover:bg-black/60'
-            }`}>
+            <div
+              className={`p-3 rounded-full backdrop-blur-md transition-all ${
+                isLiked
+                  ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.8)] scale-110'
+                  : 'bg-black/50 text-white group-hover:bg-black/70'
+              }`}
+            >
               <Heart className={`w-6 h-6 ${isLiked ? 'fill-white' : ''}`} />
             </div>
             <span className="text-xs font-semibold text-white drop-shadow">
-              {isLiked ? '48.3k' : currentReel.likes}
+              {isLiked ? 'Liked' : currentReel.likes}
             </span>
           </button>
 
+          {/* Comment */}
           <button
             id="reel-comment-btn"
-            onClick={() => onShowToast ? onShowToast(`Comments drawer (${currentReel.comments} comments)`) : null}
+            onClick={() => setIsCommentsOpen(true)}
             className="flex flex-col items-center gap-1 group"
           >
-            <div className="p-3 rounded-full bg-black/40 backdrop-blur-md text-white group-hover:bg-black/60 transition-all">
+            <div className="p-3 rounded-full bg-black/50 backdrop-blur-md text-white group-hover:bg-black/70 transition-all">
               <MessageCircle className="w-6 h-6" />
             </div>
             <span className="text-xs font-semibold text-white drop-shadow">
-              {currentReel.comments}
+              {currentComments.length > 0 ? currentComments.length : currentReel.comments}
             </span>
           </button>
 
+          {/* Share */}
           <button
             id="reel-share-btn"
-            onClick={() => onShowToast ? onShowToast('Reel link copied to clipboard!') : null}
+            onClick={handleShare}
             className="flex flex-col items-center gap-1 group"
           >
-            <div className="p-3 rounded-full bg-black/40 backdrop-blur-md text-white group-hover:bg-black/60 transition-all">
+            <div className="p-3 rounded-full bg-black/50 backdrop-blur-md text-white group-hover:bg-black/70 transition-all">
               <Share2 className="w-6 h-6" />
             </div>
             <span className="text-xs font-semibold text-white drop-shadow">Share</span>
           </button>
         </div>
 
-        {/* Bottom Metadata */}
-        <div className="relative z-10 p-4 pb-6 bg-gradient-to-t from-black via-black/80 to-transparent">
-          {/* Creator info */}
-          <div className="flex items-center gap-3 mb-2.5">
-            <img
-              src={currentReel.creator.avatar}
-              alt={currentReel.creator.name}
-              referrerPolicy="no-referrer"
-              className="w-10 h-10 rounded-full border-2 border-pink-500 object-cover"
-            />
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-white text-sm">
-                  {currentReel.creator.name}
-                </span>
-                <span className="text-xs text-pink-400 font-mono">
-                  {currentReel.creator.handle}
-                </span>
+        {/* Bottom Metadata & Creator bar */}
+        <div className="relative z-10 p-4 pb-6 bg-gradient-to-t from-black via-black/85 to-transparent">
+          {/* Creator info & Follow button */}
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <UserAvatar
+                name={currentReel.creator.name}
+                avatar={currentReel.creator.avatar}
+                size="sm"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-white text-sm truncate">
+                    {currentReel.creator.name}
+                  </span>
+                  <span className="text-xs text-pink-400 font-mono truncate">
+                    {currentReel.creator.handle}
+                  </span>
+                </div>
+                <p className="text-[11px] text-cyan-300 flex items-center gap-1 mt-0.5 truncate">
+                  <Music className="w-3 h-3 text-cyan-400 animate-spin shrink-0" />
+                  <span className="truncate">{currentReel.audioTrack}</span>
+                </p>
               </div>
-              <p className="text-[11px] text-cyan-300 flex items-center gap-1 mt-0.5">
-                <Music className="w-3 h-3 text-cyan-400 animate-spin" />
-                {currentReel.audioTrack}
-              </p>
             </div>
+
+            {/* Follow / Following toggle */}
+            <button
+              id="reel-follow-creator-btn"
+              onClick={() => toggleFollow(currentReel.creator.handle, currentReel.creator.name)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${
+                isFollowing
+                  ? 'bg-purple-900/60 border border-purple-500/50 text-purple-200'
+                  : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_10px_rgba(236,72,153,0.5)]'
+              }`}
+            >
+              {isFollowing ? (
+                <>
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Following</span>
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Follow</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Caption */}
-          <p className="text-sm text-slate-200 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed">
             {currentReel.caption}
           </p>
 
@@ -196,41 +409,89 @@ export const ReelsModal: React.FC<ReelsModalProps> = ({
             {currentReel.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs font-medium text-pink-400/90 hover:text-pink-300 cursor-pointer"
+                className="text-[11px] font-medium text-pink-400/90 hover:text-pink-300 cursor-pointer"
               >
                 {tag}
               </span>
             ))}
           </div>
 
-          {/* Progress / Next buttons */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10 text-xs text-slate-400">
+          {/* Bottom Swipe Indicator & Navigation */}
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10 text-xs text-slate-400">
             <button
-              id="reel-prev-bottom-btn"
               onClick={handlePrev}
               className="hover:text-pink-400 transition-colors"
             >
-              ← Previous
+              ↑ Prev
             </button>
-            <div className="flex gap-1.5">
-              {reels.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1 rounded-full transition-all ${
-                    i === currentIndex ? 'w-6 bg-pink-500' : 'w-2 bg-white/30'
-                  }`}
-                />
-              ))}
+            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+              <span>Swipe up/down</span>
             </div>
             <button
-              id="reel-next-bottom-btn"
               onClick={handleNext}
               className="hover:text-pink-400 transition-colors"
             >
-              Next →
+              Next ↓
             </button>
           </div>
         </div>
+
+        {/* COMMENTS BOTTOM DRAWER */}
+        {isCommentsOpen && (
+          <div className="absolute inset-x-0 bottom-0 z-30 max-h-[60%] bg-[#0c081d]/95 backdrop-blur-xl rounded-t-3xl border-t border-purple-800/60 p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-purple-900/50">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                <MessageCircle className="w-4 h-4 text-pink-400" />
+                Comments ({currentComments.length})
+              </span>
+              <button
+                onClick={() => setIsCommentsOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Comments List */}
+            <div className="flex-1 overflow-y-auto py-3 space-y-3">
+              {currentComments.length === 0 ? (
+                <p className="text-center text-xs text-slate-400 py-6">
+                  No comments yet. Be the first to chime in!
+                </p>
+              ) : (
+                currentComments.map((c) => (
+                  <div key={c.id} className="flex gap-2.5 items-start text-xs">
+                    <UserAvatar name={c.user} avatar={c.avatar} size="xs" />
+                    <div className="flex-1 bg-purple-950/40 rounded-xl p-2.5 border border-purple-900/30">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-pink-300">{c.user}</span>
+                        <span className="text-[10px] text-slate-500">{c.time}</span>
+                      </div>
+                      <p className="text-slate-200 mt-1">{c.text}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Input Form */}
+            <form onSubmit={handleAddComment} className="pt-2 flex gap-2">
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 bg-[#150f2e] border border-purple-800/60 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
+              />
+              <button
+                type="submit"
+                className="p-2 rounded-xl bg-pink-500 hover:bg-pink-600 text-white transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

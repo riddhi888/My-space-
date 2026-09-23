@@ -12,6 +12,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { SocialPost, UserProfile } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface SocialViewProps {
   posts: SocialPost[];
@@ -20,6 +21,7 @@ interface SocialViewProps {
   onCreatePost: (newPost: Omit<SocialPost, 'id' | 'timestamp' | 'likes' | 'commentsCount' | 'sharesCount'>) => void;
   onShowToast?: (msg: string) => void;
   currentUser?: UserProfile;
+  onSelectFriendProfile?: (friendName: string) => void;
 }
 
 export const SocialView: React.FC<SocialViewProps> = ({
@@ -29,16 +31,25 @@ export const SocialView: React.FC<SocialViewProps> = ({
   onCreatePost,
   onShowToast,
   currentUser,
+  onSelectFriendProfile,
 }) => {
   const [activeFilter, setActiveFilter] = useState<'All' | 'Instagram' | 'Facebook' | 'MySpace'>('All');
   const [newPostText, setNewPostText] = useState('');
   const [selectedSource, setSelectedSource] = useState<'MySpace' | 'Instagram' | 'Facebook'>('MySpace');
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState('');
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   const filteredPosts = posts.filter(
     (p) => activeFilter === 'All' || p.source === activeFilter
   );
+
+  const handleSharePost = (post: SocialPost) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
+    }
+    if (onShowToast) onShowToast(`🔗 Post link by ${post.author.name} copied!`);
+  };
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,11 +57,9 @@ export const SocialView: React.FC<SocialViewProps> = ({
 
     onCreatePost({
       author: {
-        name: currentUser ? currentUser.name : 'Alex Rivera',
-        handle: currentUser ? currentUser.handle : '@cyber_alex',
-        avatar: currentUser
-          ? currentUser.avatar
-          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+        name: currentUser ? currentUser.name : 'MySpace User',
+        handle: currentUser ? currentUser.handle : '@myspace_user',
+        avatar: currentUser ? currentUser.avatar : '',
         verified: true,
       },
       source: selectedSource,
@@ -101,18 +110,23 @@ export const SocialView: React.FC<SocialViewProps> = ({
 
         {/* Source Filter Tabs */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-          {(['All', 'Instagram', 'Facebook', 'MySpace'] as const).map((tab) => (
+          {[
+            { id: 'All', label: '🌐 All Channels' },
+            { id: 'Instagram', label: '📸 Instagram' },
+            { id: 'Facebook', label: '👥 Facebook' },
+            { id: 'MySpace', label: '✨ MySpace Community' },
+          ].map((tab) => (
             <button
-              key={tab}
-              id={`social-filter-${tab.toLowerCase()}`}
-              onClick={() => setActiveFilter(tab)}
+              key={tab.id}
+              id={`social-filter-${tab.id.toLowerCase()}`}
+              onClick={() => setActiveFilter(tab.id as any)}
               className={`px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activeFilter === tab
+                activeFilter === tab.id
                   ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]'
                   : 'bg-purple-950/40 text-slate-400 hover:text-white border border-purple-800/30'
               }`}
             >
-              {tab === 'All' ? '🌐 All Channels' : tab}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -123,11 +137,10 @@ export const SocialView: React.FC<SocialViewProps> = ({
         <div className="p-4 rounded-3xl bg-gradient-to-br from-[#181132] to-[#0e0921] border border-purple-800/40 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
           <form onSubmit={handleCreatePost}>
             <div className="flex gap-3">
-              <img
-                src={currentUser ? currentUser.avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
-                alt={currentUser ? currentUser.name : "User"}
-                referrerPolicy="no-referrer"
-                className="w-10 h-10 rounded-full object-cover border-2 border-pink-500"
+              <UserAvatar
+                name={currentUser ? currentUser.name : 'User'}
+                avatar={currentUser ? currentUser.avatar : ''}
+                size="md"
               />
               <textarea
                 id="social-composer-input"
@@ -184,16 +197,19 @@ export const SocialView: React.FC<SocialViewProps> = ({
             >
               {/* Post Author Header */}
               <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    referrerPolicy="no-referrer"
-                    className="w-10 h-10 rounded-full object-cover border border-pink-500/40"
+                <div
+                  onClick={() => onSelectFriendProfile?.(post.author.name)}
+                  className="flex items-center gap-3 cursor-pointer group/author"
+                  title={`View ${post.author.name}'s profile`}
+                >
+                  <UserAvatar
+                    name={post.author.name}
+                    avatar={post.author.avatar}
+                    size="md"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="font-semibold text-sm text-white">
+                      <h4 className="font-semibold text-sm text-white group-hover/author:text-pink-300 transition-colors">
                         {post.author.name}
                       </h4>
                       {post.author.verified && (
@@ -229,8 +245,39 @@ export const SocialView: React.FC<SocialViewProps> = ({
                 )}
               </div>
 
-              {/* Post Image Media */}
-              {post.image && (
+              {/* Post Video or Image Media */}
+              {post.videoUrl ? (
+                <div className="relative aspect-video w-full overflow-hidden bg-black">
+                  {playingVideoId === post.id ? (
+                    <iframe
+                      src={`${post.videoUrl}?autoplay=1`}
+                      title="Post video"
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div
+                      onClick={() => setPlayingVideoId(post.id)}
+                      className="relative w-full h-full cursor-pointer group/vid"
+                    >
+                      <img
+                        src={post.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80'}
+                        alt="Video thumbnail"
+                        className="w-full h-full object-cover group-hover/vid:scale-102 transition-transform duration-500 filter brightness-90"
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-full bg-pink-500/90 text-white flex items-center justify-center shadow-[0_0_20px_rgba(236,72,153,0.8)] group-hover/vid:scale-110 transition-transform">
+                          <span className="text-xl ml-1">▶</span>
+                        </div>
+                      </div>
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-mono text-cyan-300">
+                        EMBEDDED VIDEO
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : post.image ? (
                 <div className="relative aspect-video w-full overflow-hidden bg-black">
                   <img
                     src={post.image}
@@ -239,7 +286,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                     className="w-full h-full object-cover hover:scale-102 transition-transform duration-500"
                   />
                 </div>
-              )}
+              ) : null}
 
               {/* Post Action Bar */}
               <div className="p-3.5 flex items-center justify-between border-t border-purple-900/30">
@@ -277,7 +324,7 @@ export const SocialView: React.FC<SocialViewProps> = ({
                   {/* Share button */}
                   <button
                     id={`share-post-${post.id}`}
-                    onClick={() => onShowToast ? onShowToast(`Shared post by ${post.author.name}!`) : null}
+                    onClick={() => handleSharePost(post)}
                     className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-purple-400 transition-colors"
                   >
                     <Share2 className="w-4 h-4" />
@@ -293,11 +340,10 @@ export const SocialView: React.FC<SocialViewProps> = ({
                     {post.comments && post.comments.length > 0 ? (
                       post.comments.map((comment) => (
                         <div key={comment.id} className="flex gap-2.5 items-start">
-                          <img
-                            src={comment.avatar}
-                            alt={comment.user}
-                            referrerPolicy="no-referrer"
-                            className="w-7 h-7 rounded-full object-cover"
+                          <UserAvatar
+                            name={comment.user}
+                            avatar={comment.avatar}
+                            size="xs"
                           />
                           <div className="flex-1 bg-purple-950/40 p-2.5 rounded-2xl border border-purple-900/20 text-xs">
                             <div className="flex justify-between items-center mb-0.5">

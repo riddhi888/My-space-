@@ -16,9 +16,11 @@ import {
   Radio,
   Image as ImageIcon,
   ShieldCheck,
+  Upload,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { presetAvatars, demoUsers } from '../data/mockData';
+import { UserAvatar } from './UserAvatar';
 
 interface AuthViewProps {
   onLoginSuccess: (user: UserProfile, message?: string) => void;
@@ -50,8 +52,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [signupBio, setSignupBio] = useState('✨ Navigating the neon cyberspace. Music, art & digital dreams.');
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(presetAvatars[0].url);
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
-  const [avatarMode, setAvatarMode] = useState<'preset' | 'custom'>('preset');
+  const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState('');
+  const [avatarMode, setAvatarMode] = useState<'preset' | 'upload' | 'initials' | 'custom'>('preset');
   const [signupError, setSignupError] = useState('');
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedAvatarUrl(reader.result as string);
+        setAvatarMode('upload');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Combine default demo users with dynamically registered users
   const allUsers = [...registeredUsers];
@@ -128,9 +144,14 @@ export const AuthView: React.FC<AuthViewProps> = ({
       return;
     }
 
-    const finalAvatar = avatarMode === 'custom' && customAvatarUrl.trim()
-      ? customAvatarUrl.trim()
-      : selectedAvatarUrl;
+    let finalAvatar = selectedAvatarUrl;
+    if (avatarMode === 'upload' && uploadedAvatarUrl) {
+      finalAvatar = uploadedAvatarUrl;
+    } else if (avatarMode === 'initials') {
+      finalAvatar = '';
+    } else if (avatarMode === 'custom' && customAvatarUrl.trim()) {
+      finalAvatar = customAvatarUrl.trim();
+    }
 
     const newUser: UserProfile = {
       id: `user_${Date.now()}`,
@@ -263,13 +284,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     onClick={() => handleQuickDemoLogin(user)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/50 hover:bg-pink-500/20 border border-purple-800/50 hover:border-pink-500/40 text-xs text-slate-300 hover:text-white transition-all"
                   >
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      referrerPolicy="no-referrer"
-                      className="w-5 h-5 rounded-full object-cover border border-pink-400/50"
+                    <UserAvatar
+                      name={user.name}
+                      avatar={user.avatar}
+                      size="xs"
                     />
-                    <span className="font-medium">{user.name.split(' ')[0]}</span>
+                    <span className="font-medium">{user.name}</span>
                     <span className="text-[10px] text-pink-400 font-mono">{user.handle}</span>
                   </button>
                 ))}
@@ -376,28 +396,24 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </button>
             </form>
 
-            {/* Quick Demo Pre-fills */}
+            {/* Quick Demo Pre-fill */}
             <div className="pt-2 border-t border-purple-900/40 space-y-2">
               <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider block text-center">
-                Quick Fill Demo Accounts:
+                Demo Account Access:
               </span>
-              <div className="grid grid-cols-3 gap-1.5">
-                {demoUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => {
-                      setLoginIdentifier(u.handle);
-                      setLoginPassword('password123');
-                      setLoginError('');
-                    }}
-                    className="p-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/40 text-[10px] text-slate-300 hover:text-white font-mono truncate"
-                    title={`Fill ${u.name}`}
-                  >
-                    {u.name.split(' ')[0]}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginIdentifier(demoUsers[0].email || demoUsers[0].handle);
+                  setLoginPassword('password123');
+                  setLoginError('');
+                }}
+                className="w-full p-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/40 text-xs text-slate-300 hover:text-white font-mono flex items-center justify-center gap-2 transition-colors"
+                title={`Fill ${demoUsers[0].name}`}
+              >
+                <UserAvatar name={demoUsers[0].name} avatar={demoUsers[0].avatar} size="xs" />
+                <span>Fill Credentials ({demoUsers[0].name})</span>
+              </button>
             </div>
 
             {/* Switch to Sign Up */}
@@ -471,22 +487,30 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <span className="text-[10px] text-pink-400 font-mono">Live Preview</span>
                 </label>
 
+                {/* Hidden File Input for Avatar Upload */}
+                <input
+                  type="file"
+                  ref={avatarFileInputRef}
+                  onChange={handleAvatarFile}
+                  accept="image/*"
+                  className="hidden"
+                />
+
                 {/* Avatar Preview Ring */}
                 <div className="flex items-center gap-3">
                   <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_15px_rgba(236,72,153,0.5)] shrink-0">
-                    <img
-                      src={
-                        avatarMode === 'custom' && customAvatarUrl.trim()
+                    <UserAvatar
+                      name={signupDisplayName || signupUsername || 'User'}
+                      avatar={
+                        avatarMode === 'upload'
+                          ? uploadedAvatarUrl
+                          : avatarMode === 'initials'
+                          ? ''
+                          : avatarMode === 'custom' && customAvatarUrl.trim()
                           ? customAvatarUrl
                           : selectedAvatarUrl
                       }
-                      alt="Avatar Preview"
-                      referrerPolicy="no-referrer"
-                      className="w-14 h-14 rounded-full object-cover border-2 border-[#090714]"
-                      onError={(e) => {
-                        // Fallback on invalid image url
-                        (e.target as HTMLImageElement).src = presetAvatars[0].url;
-                      }}
+                      size="lg"
                     />
                     <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-[#090714] rounded-full" />
                   </div>
@@ -502,7 +526,30 @@ export const AuthView: React.FC<AuthViewProps> = ({
                           : `@${signupUsername.toLowerCase().replace(/\s+/g, '_')}`
                         : '@username'}
                     </p>
-                    <div className="flex gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all flex items-center gap-1 ${
+                          avatarMode === 'upload'
+                            ? 'bg-pink-500 text-white shadow-sm'
+                            : 'bg-purple-950 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <Upload className="w-2.5 h-2.5" />
+                        <span>Upload Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAvatarMode('initials')}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
+                          avatarMode === 'initials'
+                            ? 'bg-pink-500 text-white shadow-sm'
+                            : 'bg-purple-950 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Initials Avatar
+                      </button>
                       <button
                         type="button"
                         onClick={() => setAvatarMode('preset')}
@@ -512,7 +559,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                             : 'bg-purple-950 text-slate-400 hover:text-white'
                         }`}
                       >
-                        Cyber Presets
+                        Presets
                       </button>
                       <button
                         type="button"
@@ -523,14 +570,33 @@ export const AuthView: React.FC<AuthViewProps> = ({
                             : 'bg-purple-950 text-slate-400 hover:text-white'
                         }`}
                       >
-                        Image URL
+                        URL
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Preset Avatars Grid */}
-                {avatarMode === 'preset' ? (
+                {/* Avatar Selection Sections */}
+                {avatarMode === 'upload' && (
+                  <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/40 text-xs text-center">
+                    <p className="text-slate-300 font-medium">Photo uploaded successfully!</p>
+                    <button
+                      type="button"
+                      onClick={() => avatarFileInputRef.current?.click()}
+                      className="mt-1 text-pink-400 hover:text-pink-300 underline text-[11px]"
+                    >
+                      Choose a different photo
+                    </button>
+                  </div>
+                )}
+
+                {avatarMode === 'initials' && (
+                  <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/40 text-xs text-center text-slate-300">
+                    Your clean initials avatar will automatically generate from your name!
+                  </div>
+                )}
+
+                {avatarMode === 'preset' && (
                   <div className="space-y-1.5 pt-1">
                     <span className="text-[10px] text-slate-400 block">Select a neon avatar:</span>
                     <div className="grid grid-cols-6 gap-2">
@@ -564,7 +630,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
                       })}
                     </div>
                   </div>
-                ) : (
+                )}
+
+                {avatarMode === 'custom' && (
                   <div className="space-y-1.5 pt-1">
                     <span className="text-[10px] text-slate-400 block">Enter Custom Photo URL:</span>
                     <div className="relative">

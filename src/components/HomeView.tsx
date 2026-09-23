@@ -14,9 +14,15 @@ import {
   Radio,
   Sparkles,
   TrendingUp,
+  Edit3,
+  Users,
+  Play,
+  Trophy,
 } from 'lucide-react';
-import { Friend, ChatThread, Reel, MusicTrack, TabType } from '../types';
+import { Friend, ChatThread, Reel, MusicTrack, TabType, UserProfile } from '../types';
 import { MusicCard } from './MusicCard';
+import { PWAInstallButton } from './PWAInstallButton';
+import { UserAvatar } from './UserAvatar';
 
 interface HomeViewProps {
   onSelectTab: (tab: TabType) => void;
@@ -30,6 +36,8 @@ interface HomeViewProps {
   onOpenChatThread: (chatId: string) => void;
   onOpenNotifications: () => void;
   unreadNotificationsCount: number;
+  currentUser: UserProfile;
+  onOpenEditProfile?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -44,12 +52,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenChatThread,
   onOpenNotifications,
   unreadNotificationsCount,
+  currentUser,
+  onOpenEditProfile,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'social' | 'entertainment'>('all');
 
-  // Entertainment Hubs required by user prompt:
-  // Instagram, Facebook, YouTube, Chat, Reels, Music, Games
   const hubs = [
     {
       id: 'instagram',
@@ -78,7 +86,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       category: 'entertainment',
       gradient: 'from-red-600 via-rose-600 to-pink-600',
       shadow: 'shadow-red-500/30',
-      badge: '4K Streams',
+      badge: 'Shorts & Videos',
       action: onOpenYouTube,
     },
     {
@@ -88,7 +96,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       category: 'social',
       gradient: 'from-cyan-500 via-blue-500 to-indigo-600',
       shadow: 'shadow-cyan-500/30',
-      badge: 'Live DMs',
+      badge: 'Direct Messages',
       action: () => onSelectTab('chat'),
     },
     {
@@ -98,8 +106,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
       category: 'entertainment',
       gradient: 'from-fuchsia-500 via-pink-500 to-rose-500',
       shadow: 'shadow-fuchsia-500/30',
-      badge: 'Shorts & Drops',
-      action: onOpenReels,
+      badge: 'Shorts & Clips',
+      action: () => onSelectTab('reels'),
     },
     {
       id: 'music',
@@ -108,12 +116,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
       category: 'entertainment',
       gradient: 'from-violet-600 via-purple-600 to-pink-600',
       shadow: 'shadow-purple-500/30',
-      badge: 'Synthwave FM',
-      action: () => {
-        // Scroll to music player card
-        const el = document.getElementById('home-music-section');
-        el?.scrollIntoView({ behavior: 'smooth' });
-      },
+      badge: 'Synth Player',
+      action: () => onSelectTab('music'),
     },
     {
       id: 'games',
@@ -122,7 +126,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       category: 'entertainment',
       gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
       shadow: 'shadow-teal-500/30',
-      badge: 'Cyber Arcade',
+      badge: 'Neon Arcade',
       action: () => onSelectTab('games'),
     },
   ];
@@ -154,20 +158,113 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Instagram, YouTube, friends, games..."
-            className="w-full pl-10 pr-10 py-3 rounded-2xl bg-purple-950/30 border border-purple-800/40 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-pink-500 focus:shadow-[0_0_15px_rgba(236,72,153,0.3)] transition-all"
+            placeholder="Search friends, music, reels, channels..."
+            className="w-full pl-10 pr-4 py-2.5 bg-purple-950/40 border border-purple-800/40 rounded-2xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all shadow-inner"
           />
-          {searchQuery && (
-            <button
-              id="clear-home-search-btn"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 hover:text-white"
-            >
-              CLEAR
-            </button>
-          )}
         </div>
       </div>
+
+      {/* 2. USER WELCOME CARD WITH EDIT PROFILE BUTTON */}
+      <div className="px-4">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#160f33]/90 via-[#130b2c]/95 to-[#0b071a]/95 border border-purple-700/40 p-4 shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+          {/* Neon ambient highlights */}
+          <div className="absolute -top-8 -right-8 w-28 h-28 bg-pink-500/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex items-start justify-between gap-3">
+            {/* User Profile info */}
+            <div className="flex items-center gap-3.5 min-w-0">
+              {/* Profile Photo with glowing ring & clean initials fallback */}
+              <div
+                onClick={() => onSelectTab('profile')}
+                className="relative cursor-pointer shrink-0 group"
+                title="View Profile"
+              >
+                <div className="p-0.5 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 shadow-[0_0_15px_rgba(236,72,153,0.5)] group-hover:scale-105 transition-transform">
+                  <UserAvatar
+                    name={currentUser.name}
+                    avatar={currentUser.avatar}
+                    size="lg"
+                    className="rounded-[14px]"
+                  />
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]" />
+              </div>
+
+              {/* Name & Status */}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3
+                    onClick={() => onSelectTab('profile')}
+                    className="font-display font-extrabold text-base text-white hover:text-pink-300 transition-colors cursor-pointer truncate"
+                  >
+                    {currentUser.name}
+                  </h3>
+                  <span className="px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 text-[9px] font-mono shrink-0">
+                    MEMBER
+                  </span>
+                </div>
+                <p className="text-[11px] font-mono text-cyan-400 truncate">
+                  {currentUser.handle}
+                </p>
+
+                {/* Status bubble */}
+                <div className="mt-1 flex items-center gap-1 text-[11px] text-pink-200/90 bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 rounded-lg max-w-full">
+                  <Sparkles className="w-3 h-3 text-pink-400 shrink-0" />
+                  <span className="truncate">{currentUser.statusText || currentUser.bio}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Profile Button */}
+            <button
+              id="home-edit-profile-btn"
+              onClick={() => {
+                if (onOpenEditProfile) {
+                  onOpenEditProfile();
+                } else {
+                  onSelectTab('profile');
+                }
+              }}
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500/20 to-purple-600/30 hover:from-pink-500/30 hover:to-purple-600/40 border border-pink-500/40 hover:border-pink-400 text-pink-200 text-xs font-semibold flex items-center gap-1.5 shadow-[0_0_12px_rgba(236,72,153,0.2)] transition-all active:scale-95"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-pink-400" />
+              <span>Edit Profile</span>
+            </button>
+          </div>
+
+          {/* User Quick Stats bar */}
+          <div className="relative z-10 mt-3.5 pt-3 border-t border-purple-800/40 grid grid-cols-4 gap-1 text-center">
+            <div className="p-1 rounded-lg bg-purple-950/30">
+              <span className="font-display font-bold text-xs text-white">
+                {currentUser.stats.friends}
+              </span>
+              <p className="text-[10px] text-slate-400">Friends</p>
+            </div>
+            <div className="p-1 rounded-lg bg-purple-950/30">
+              <span className="font-display font-bold text-xs text-pink-400">
+                {currentUser.stats.followers}
+              </span>
+              <p className="text-[10px] text-slate-400">Followers</p>
+            </div>
+            <div className="p-1 rounded-lg bg-purple-950/30">
+              <span className="font-display font-bold text-xs text-purple-300">
+                {currentUser.stats.following}
+              </span>
+              <p className="text-[10px] text-slate-400">Following</p>
+            </div>
+            <div className="p-1 rounded-lg bg-purple-950/30">
+              <span className="font-display font-bold text-xs text-cyan-400">
+                {currentUser.stats.views}
+              </span>
+              <p className="text-[10px] text-slate-400">Views</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* INSTALL MYSPACE APP BANNER */}
+      <PWAInstallButton variant="banner" />
 
       {/* NOTIFICATIONS QUICK ALERT BANNER */}
       {unreadNotificationsCount > 0 && (
@@ -188,7 +285,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </span>
                 </p>
                 <p className="text-[11px] text-pink-200/80">
-                  Marcus Vance & Elena sent you updates
+                  Tom Anderson & Sarah Jenkins sent you updates
                 </p>
               </div>
             </div>
@@ -197,7 +294,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
-      {/* 2. ONLINE FRIENDS (Stories Carousel with Neon Glowing Rings) */}
+      {/* 3. ONLINE FRIENDS (Stories Carousel) */}
       <div className="space-y-2">
         <div className="px-4 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -220,40 +317,38 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onClick={() => onOpenStory(friend)}
               className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
             >
-              {/* Avatar with glowing animated neon ring */}
               <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-all">
                 <div className="p-0.5 rounded-full bg-[#090714]">
-                  <img
-                    src={friend.avatar}
-                    alt={friend.name}
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-14 rounded-full object-cover"
+                  <UserAvatar
+                    name={friend.name}
+                    avatar={friend.avatar}
+                    size="lg"
                   />
                 </div>
-                {/* Active status pulse */}
-                <span className="absolute bottom-0 right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_6px_#34d399]" />
+                {friend.isOnline && (
+                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]" />
+                )}
               </div>
-              <span className="text-[11px] font-medium text-slate-300 max-w-[64px] truncate group-hover:text-pink-300">
-                {friend.name}
+              <span className="text-xs font-medium text-slate-300 group-hover:text-pink-300 transition-colors w-16 truncate text-center">
+                {friend.name.split(' ')[0]}
               </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* 3. ENTERTAINMENT & SOCIAL HUBS (Instagram, Facebook, YouTube, Chat, Reels, Music, Games) */}
+      {/* 4. ENTERTAINMENT & SOCIAL SHORTCUTS */}
       <div className="px-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
-              <span>Entertainment & Hubs</span>
+              <span>Entertainment & Shortcuts</span>
               <Sparkles className="w-4 h-4 text-pink-400" />
             </h3>
             <p className="text-[11px] text-slate-400">
-              Quick access to your social and media channels
+              Quick access to channels, music, games & reels
             </p>
           </div>
-          {/* Category Filter Pills */}
           <div className="flex bg-purple-950/40 p-1 rounded-xl border border-purple-800/30 text-[10px]">
             <button
               onClick={() => setSelectedCategory('all')}
@@ -293,11 +388,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 onClick={hub.action}
                 className="relative overflow-hidden p-3.5 rounded-2xl bg-gradient-to-b from-purple-950/40 to-[#0e0a1f] border border-purple-800/40 hover:border-pink-500/50 hover:shadow-[0_0_20px_rgba(236,72,153,0.2)] transition-all text-left group flex items-start justify-between"
               >
-                {/* Background glow hover */}
                 <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-pink-500/10 rounded-full blur-xl group-hover:bg-pink-500/25 transition-all" />
 
                 <div className="relative z-10">
-                  {/* Hub Icon */}
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${hub.gradient} p-0.5 mb-2.5 shadow-md ${hub.shadow} group-hover:scale-105 transition-transform`}>
                     <div className="w-full h-full bg-[#0d091d]/80 rounded-[10px] flex items-center justify-center">
                       <Icon className="w-5 h-5 text-white" />
@@ -321,21 +414,56 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 4. REELS SPOTLIGHT PREVIEW */}
+      {/* 5. GAMES SHORTCUT BANNER */}
+      <div className="px-4">
+        <div
+          onClick={() => onSelectTab('games')}
+          className="relative overflow-hidden p-4 rounded-3xl bg-gradient-to-r from-emerald-950/60 via-teal-950/60 to-purple-950/60 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer shadow-[0_0_25px_rgba(16,185,129,0.2)] group transition-all"
+        >
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 p-0.5 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+                <div className="w-full h-full bg-[#081512] rounded-[14px] flex items-center justify-center">
+                  <Gamepad2 className="w-6 h-6 text-emerald-400 group-hover:rotate-12 transition-transform" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-display font-bold text-sm text-white group-hover:text-emerald-300 transition-colors">
+                    Neon Cyber Arcade
+                  </h4>
+                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono">
+                    PLAYABLE
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Play Cyber Reflex Tap & Memory Matrix games!
+                </p>
+              </div>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Play</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. REELS SHORTCUT & PREVIEWS */}
       <div className="px-4 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Flame className="w-4 h-4 text-rose-400" />
             <h3 className="font-display font-bold text-sm tracking-wide text-white">
-              Trending Reels
+              Trending Reels & Shorts
             </h3>
           </div>
           <button
             id="view-all-reels-btn"
-            onClick={onOpenReels}
+            onClick={() => onSelectTab('reels')}
             className="text-xs font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
           >
-            Open Reels <ChevronRight className="w-3.5 h-3.5" />
+            All Reels <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -344,7 +472,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div
               key={reel.id}
               id={`reel-preview-${reel.id}`}
-              onClick={onOpenReels}
+              onClick={() => onSelectTab('reels')}
               className="relative w-32 h-48 rounded-2xl overflow-hidden shrink-0 border border-purple-800/40 cursor-pointer group shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all"
             >
               <img
@@ -372,7 +500,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 5. INTERACTIVE MUSIC PLAYER WIDGET */}
+      {/* 7. MUSIC PLAYER SHORTCUT */}
       <div id="home-music-section" className="px-4 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -381,12 +509,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
               Synth & Cyber Beats
             </h3>
           </div>
-          <span className="text-[11px] text-cyan-400 font-mono">LIVE AUDIO</span>
+          <button
+            onClick={() => onSelectTab('music')}
+            className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+          >
+            Music Player <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
         <MusicCard tracks={tracks} />
       </div>
 
-      {/* 6. RECENT CHATS (with direct open conversation) */}
+      {/* 8. RECENT CHATS */}
       <div className="px-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -412,20 +545,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onClick={() => onOpenChatThread(chat.id)}
               className="flex items-center gap-3 p-3 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 hover:bg-purple-900/30 cursor-pointer transition-all"
             >
-              {/* Avatar */}
               <div className="relative shrink-0">
-                <img
-                  src={chat.friend.avatar}
-                  alt={chat.friend.name}
-                  referrerPolicy="no-referrer"
-                  className="w-12 h-12 rounded-full object-cover border border-purple-600/40"
+                <UserAvatar
+                  name={chat.friend.name}
+                  avatar={chat.friend.avatar}
+                  size="md"
+                  isOnline={chat.friend.isOnline}
+                  showOnline={true}
                 />
-                {chat.friend.isOnline && (
-                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090714]" />
-                )}
               </div>
 
-              {/* Message preview */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-sm text-white truncate">
@@ -440,7 +569,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </p>
               </div>
 
-              {/* Unread badge */}
               {chat.unreadCount > 0 && (
                 <div className="w-5 h-5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(236,72,153,0.8)]">
                   {chat.unreadCount}

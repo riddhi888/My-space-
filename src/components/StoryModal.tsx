@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Send, Heart, Sparkles } from 'lucide-react';
 import { Friend } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface StoryModalProps {
   friend: Friend | null;
@@ -48,14 +49,11 @@ export const StoryModal: React.FC<StoryModalProps> = ({
         {/* Friend info header */}
         <div className="relative z-10 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-r from-pink-500 to-cyan-400">
-              <img
-                src={friend.avatar}
-                alt={friend.name}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
+            <UserAvatar
+              name={friend.name}
+              avatar={friend.avatar}
+              size="md"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-white text-sm">{friend.name}</span>
