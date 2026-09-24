@@ -168,22 +168,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
         duration: '3:30',
       },
       stats: {
-        friends: 1, // Auto-friends with Tom/Alex
+        friends: 0,
         followers: 0,
-        following: 1,
+        following: 0,
         views: '1',
       },
       badges: ['🌟 Cyber Newcomer', '🚀 Neon Explorer'],
-      top8Friends: [
-        {
-          id: 'f_tom',
-          name: 'Alex (MySpace Guide)',
-          handle: '@cyber_alex',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-          isOnline: true,
-          statusText: 'Welcome to MySpace! 🎶',
-        },
-      ],
+      top8Friends: [],
     };
 
     onRegisterUser(newUser);
@@ -344,7 +335,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
                   <span>Username or Email</span>
-                  <span className="text-[10px] text-pink-400 font-mono">e.g. @cyber_alex</span>
+                  <span className="text-[10px] text-pink-400 font-mono">e.g. @puchu</span>
                 </label>
                 <div className="relative">
                   <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />

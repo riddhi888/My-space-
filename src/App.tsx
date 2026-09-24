@@ -45,7 +45,29 @@ export default function App() {
   });
 
   const [currentTab, setCurrentTab] = useState<TabType>('home');
-  const [user, setUser] = useState<UserProfile>(initialUser);
+  const [user, setUser] = useState<UserProfile>(() => {
+    try {
+      const saved = localStorage.getItem('myspace_user_profile');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return initialUser;
+  });
+
+  const handleUpdateUserProfile = (updated: Partial<UserProfile>) => {
+    setUser((prev) => {
+      const nextUser = { ...prev, ...updated };
+      try {
+        localStorage.setItem('myspace_user_profile', JSON.stringify(nextUser));
+      } catch (e) {
+        // ignore
+      }
+      return nextUser;
+    });
+  };
   const [allFriendsList, setAllFriendsList] = useState<Friend[]>(allFriends);
   const [friends, setFriends] = useState(initialFriends);
   const [isAddFriendModalOpen, setIsAddFriendModalOpen] = useState(false);
@@ -86,6 +108,11 @@ export default function App() {
 
   const handleLoginSuccess = (authenticatedUser: UserProfile, message?: string) => {
     setUser(authenticatedUser);
+    try {
+      localStorage.setItem('myspace_user_profile', JSON.stringify(authenticatedUser));
+    } catch (e) {
+      // ignore
+    }
     setIsLoggedIn(true);
     // Explicit requirement: After login, show the actual MySpace Home dashboard
     setCurrentTab('home');
@@ -178,52 +205,6 @@ export default function App() {
         return t;
       })
     );
-
-    // Simulated quick friendly response after 1.2 seconds for realistic interaction
-    setTimeout(() => {
-      let randomReply = 'Awesome vibe! Love this neon energy ✨';
-      if (attachment?.type === 'game_invite') {
-        randomReply = `Challenge accepted! Booting up ${attachment.gameTitle || 'the game'} right now 🕹️⚡`;
-      } else if (attachment?.type === 'image') {
-        randomReply = 'Whoa, love this cyberpunk capture! Ultra high contrast 📸✨';
-      } else if (attachment?.type === 'audio') {
-        randomReply = 'Got your voice memo, crisp audio transmission! 🎧💜';
-      } else if (attachment?.type === 'sticker') {
-        randomReply = 'Nice sticker! Adding to my neon favorites matrix 👾';
-      } else {
-        const replies = [
-          'Awesome vibe! Love this neon energy ✨',
-          'Checking this out right now!',
-          'Totally agreed! Let us connect in the Arcade later 🕹️',
-          'Sounds great! Catch you soon 🔥',
-          'Synced up on the cyber grid! 🌌',
-        ];
-        randomReply = replies[Math.floor(Math.random() * replies.length)];
-      }
-
-      const friendReply = {
-        id: `msg_reply_${Date.now()}`,
-        senderId: 'friend',
-        text: randomReply,
-        timestamp: 'Just now',
-        isMe: false,
-        status: 'delivered' as const,
-      };
-
-      setChatThreads((prevThreads) =>
-        prevThreads.map((t) => {
-          if (t.id === chatId) {
-            return {
-              ...t,
-              lastMessage: randomReply,
-              timestamp: 'Just now',
-              messages: [...t.messages, friendReply],
-            };
-          }
-          return t;
-        })
-      );
-    }, 1200);
   };
 
   const handleLikePost = (postId: string) => {
@@ -368,7 +349,7 @@ export default function App() {
               tracks={mockTracks}
               currentUser={user}
               onSetProfileAnthem={(song: any) => {
-                setUser((prev) => ({ ...prev, profileSong: song }));
+                handleUpdateUserProfile({ profileSong: song });
               }}
               onShowToast={showToast}
             />
@@ -428,7 +409,7 @@ export default function App() {
               onOpenChatWithFriend={handleOpenChatWithFriend}
               onOpenAddFriend={() => setIsAddFriendModalOpen(true)}
               onUpdateBio={handleUpdateBio}
-              onUpdateProfile={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
+              onUpdateProfile={handleUpdateUserProfile}
               onSelectTab={(tab) => setCurrentTab(tab)}
               onShowToast={showToast}
               onLogout={handleLogout}

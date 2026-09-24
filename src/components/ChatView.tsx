@@ -7,6 +7,7 @@ import {
   Video,
   Smile,
   Paperclip,
+  Check,
   CheckCheck,
   Sparkles,
   Gamepad2,
@@ -311,11 +312,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
         {/* Message Thread History */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar">
-          {/* Encryption & Safety Banner */}
+          {/* Real Messaging Status Indicator */}
           <div className="text-center py-2">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 px-3 py-1 rounded-full bg-purple-950/40 border border-purple-800/30 inline-flex items-center gap-1.5">
+            <span className="text-[10px] font-mono tracking-wide text-slate-400 px-3 py-1 rounded-full bg-purple-950/40 border border-purple-800/30 inline-flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-pink-400" />
-              Direct Encrypted Social Terminal
+              Direct Messaging Ready • Local Session (No server connected)
             </span>
           </div>
 
@@ -428,9 +429,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
               </div>
 
               {/* Timestamp & Status */}
-              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono mt-1 px-1">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono mt-1 px-1">
                 <span>{msg.timestamp}</span>
-                {msg.isMe && <CheckCheck className="w-3.5 h-3.5 text-cyan-400" />}
+                {msg.isMe && (
+                  <span className="flex items-center gap-0.5 text-pink-400 text-[10px]" title="Saved locally in browser session">
+                    <Check className="w-3 h-3 text-pink-400" />
+                    <span>Saved</span>
+                  </span>
+                )}
               </div>
             </div>
           ))}

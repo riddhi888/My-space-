@@ -1,10 +1,10 @@
 import { Friend, ChatThread, SocialPost, Reel, MusicTrack, GameItem, NotificationItem, UserProfile } from '../types';
 
 export const currentUser: UserProfile = {
-  id: 'user_riddhi',
-  name: 'Riddhi Das',
-  handle: '@riddhi',
-  email: 'riddhidas836@gmail.com',
+  id: 'user_puchu',
+  name: 'Puchu',
+  handle: '@puchu',
+  email: 'puchu@myspace.com',
   password: 'password123',
   avatar: '', // Clean initials avatar displayed by default
   coverImage: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
@@ -120,9 +120,9 @@ export const mockSocialPosts: SocialPost[] = [
 ];
 
 export const mockReels: Reel[] = [
-  { id: 'dQw4w9WgXcQ', platform: 'youtube', title: 'My YouTube Short', username: '@riddhi' },
-  { id: 'C12345xyz', platform: 'instagram', title: 'My Insta Reel', username: '@riddhi' },
-  { id: '123456789', platform: 'facebook', title: 'My FB Reel', username: '@riddhi' },
+  { id: 'dQw4w9WgXcQ', platform: 'youtube', title: 'Cyber Synthwave Beats', username: '@puchu' },
+  { id: 'C12345xyz', platform: 'instagram', title: 'Neon Arcade Highlights', username: '@puchu' },
+  { id: '123456789', platform: 'facebook', title: 'Future Retro Drift', username: '@puchu' },
   { id: '5qap5aO4i9A', platform: 'youtube', title: 'Cyber City Driving Vibes', username: '@neon_rider' },
   { id: 'kJQP7kiw5Fk', platform: 'youtube', title: 'Retro Arcade CRT Restoration', username: '@arcade_lab' },
   { id: 'C8zK1jRLlqQ', platform: 'instagram', title: 'Modular Synth Ambient Jam', username: '@synth_lab' },
