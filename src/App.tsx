@@ -28,6 +28,7 @@ import { StoryModal } from './components/StoryModal';
 import { NotificationModal } from './components/NotificationModal';
 import { AuthView } from './components/AuthView';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { AddFriendModal } from './components/AddFriendModal';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,7 +46,9 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState<TabType>('home');
   const [user, setUser] = useState<UserProfile>(initialUser);
+  const [allFriendsList, setAllFriendsList] = useState<Friend[]>(allFriends);
   const [friends, setFriends] = useState(initialFriends);
+  const [isAddFriendModalOpen, setIsAddFriendModalOpen] = useState(false);
   const [chatThreads, setChatThreads] = useState(initialChatThreads);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>(mockSocialPosts);
@@ -96,6 +99,22 @@ export default function App() {
     setIsLoggedIn(false);
     setActiveChatId(null);
     showToast('Logged out of MySpace. Welcome back anytime!');
+  };
+
+  const handleAddFriend = (newFriend: Friend) => {
+    setAllFriendsList((prev) => [newFriend, ...prev]);
+    if (newFriend.isOnline) {
+      setFriends((prev) => [newFriend, ...prev]);
+    }
+    setUser((prev) => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        friends: (prev.stats?.friends || 0) + 1,
+      },
+      top8Friends: prev.top8Friends.length < 8 ? [...prev.top8Friends, newFriend] : prev.top8Friends,
+    }));
+    showToast(`Added ${newFriend.name} to friends! ✨`);
   };
 
   // Unread counts
@@ -340,6 +359,7 @@ export default function App() {
               unreadNotificationsCount={unreadNotificationsCount}
               currentUser={user}
               onOpenEditProfile={() => setCurrentTab('profile')}
+              onOpenAddFriend={() => setIsAddFriendModalOpen(true)}
             />
           )}
 
@@ -347,7 +367,7 @@ export default function App() {
             <MusicView
               tracks={mockTracks}
               currentUser={user}
-              onSetProfileAnthem={(song) => {
+              onSetProfileAnthem={(song: any) => {
                 setUser((prev) => ({ ...prev, profileSong: song }));
               }}
               onShowToast={showToast}
@@ -357,13 +377,14 @@ export default function App() {
           {currentTab === 'chat' && (
             <ChatView
               chatThreads={chatThreads}
-              allFriends={allFriends}
+              allFriends={allFriendsList}
               onlineFriends={friends}
               activeChatId={activeChatId}
               onSelectChat={(id) => setActiveChatId(id)}
               onSendMessage={handleSendMessage}
               onOpenChatWithFriend={handleOpenChatWithFriend}
               onNavigateToGames={() => setCurrentTab('games')}
+              onOpenAddFriend={() => setIsAddFriendModalOpen(true)}
               onShowToast={showToast}
             />
           )}
@@ -377,13 +398,21 @@ export default function App() {
               onShowToast={showToast}
               currentUser={user}
               onSelectFriendProfile={(name) => {
-                const f = allFriends.find((fr) => fr.name.toLowerCase() === name.toLowerCase());
+                const f = allFriendsList.find((fr) => fr.name.toLowerCase() === name.toLowerCase());
                 if (f) handleOpenChatWithFriend(f);
               }}
             />
           )}
 
-          {currentTab === 'games' && <GamesView games={mockGames} onShowToast={showToast} />}
+          {currentTab === 'games' && (
+            <GamesView
+              games={mockGames}
+              currentUser={user}
+              friends={allFriendsList}
+              onOpenAddFriend={() => setIsAddFriendModalOpen(true)}
+              onShowToast={showToast}
+            />
+          )}
 
           {currentTab === 'reels' && (
             <ReelsView
@@ -395,8 +424,9 @@ export default function App() {
           {currentTab === 'profile' && (
             <ProfileView
               user={user}
-              allFriends={allFriends}
+              allFriends={allFriendsList}
               onOpenChatWithFriend={handleOpenChatWithFriend}
+              onOpenAddFriend={() => setIsAddFriendModalOpen(true)}
               onUpdateBio={handleUpdateBio}
               onUpdateProfile={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
               onSelectTab={(tab) => setCurrentTab(tab)}
@@ -450,6 +480,12 @@ export default function App() {
           notifications={notifications}
           onMarkAllAsRead={handleMarkAllNotificationsRead}
           onDismissNotification={handleDismissNotification}
+        />
+
+        <AddFriendModal
+          isOpen={isAddFriendModalOpen}
+          onClose={() => setIsAddFriendModalOpen(false)}
+          onAddFriend={handleAddFriend}
         />
 
         {/* Offline Status Toast */}

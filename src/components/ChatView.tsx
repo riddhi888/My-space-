@@ -16,6 +16,7 @@ import {
   Play,
   Pause,
   Zap,
+  UserPlus,
 } from 'lucide-react';
 import { ChatThread, Friend, Message, MessageAttachment, CallType, CallState } from '../types';
 import { CallModal } from './CallModal';
@@ -34,6 +35,7 @@ interface ChatViewProps {
   onOpenChatWithFriend?: (friend: Friend) => void;
   onNavigateToGames?: () => void;
   onShowToast?: (msg: string) => void;
+  onOpenAddFriend?: () => void;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -46,6 +48,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onOpenChatWithFriend,
   onNavigateToGames,
   onShowToast,
+  onOpenAddFriend,
 }) => {
   // Navigation tabs in chat list
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
@@ -133,13 +136,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
   const handleTriggerSimulatedIncomingCall = (friend?: Friend) => {
     const caller = friend || allFriends[0];
+    if (!caller) {
+      onShowToast?.('No friends yet. Add friends to get started.');
+      return;
+    }
     const isVideo = Math.random() > 0.5;
     setActiveCall({
       friend: caller,
       type: isVideo ? 'video' : 'voice',
       state: 'incoming',
     });
-    onShowToast?.(`Incoming demo call from ${caller.name}`);
+    onShowToast?.(`Incoming call from ${caller.name}`);
   };
 
   const handleAcceptCall = () => {
@@ -623,38 +630,55 @@ export const ChatView: React.FC<ChatViewProps> = ({
         <div className="space-y-4">
           {/* Quick Online Friends Row */}
           <div className="space-y-1.5">
-            <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Quick Connect • Online Now
-            </p>
-            <div className="flex gap-3 overflow-x-auto px-4 py-1 no-scrollbar">
-              {onlineFriends.map((friend) => (
+            <div className="px-4 flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Quick Connect • Online Now
+              </p>
+              {onOpenAddFriend && (
                 <button
-                  key={friend.id}
-                  onClick={() => {
-                    const thread = chatThreads.find((t) => t.friend.id === friend.id);
-                    if (thread) {
-                      onSelectChat(thread.id);
-                    } else if (onOpenChatWithFriend) {
-                      onOpenChatWithFriend(friend);
-                    }
-                  }}
-                  className="flex flex-col items-center gap-1 shrink-0 group focus:outline-none"
+                  onClick={onOpenAddFriend}
+                  className="text-[11px] font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
                 >
-                  <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-cyan-400 to-pink-500 group-hover:scale-105 transition-transform">
-                    <UserAvatar
-                      name={friend.name}
-                      avatar={friend.avatar}
-                      size="md"
-                      isOnline={friend.isOnline}
-                      showOnline={true}
-                    />
-                  </div>
-                  <span className="text-[11px] text-slate-300 truncate max-w-[60px]">
-                    {friend.name.split(' ')[0]}
-                  </span>
+                  <UserPlus className="w-3 h-3" />
+                  <span>Add Friend</span>
                 </button>
-              ))}
+              )}
             </div>
+            {onlineFriends.length > 0 ? (
+              <div className="flex gap-3 overflow-x-auto px-4 py-1 no-scrollbar">
+                {onlineFriends.map((friend) => (
+                  <button
+                    key={friend.id}
+                    onClick={() => {
+                      const thread = chatThreads.find((t) => t.friend.id === friend.id);
+                      if (thread) {
+                        onSelectChat(thread.id);
+                      } else if (onOpenChatWithFriend) {
+                        onOpenChatWithFriend(friend);
+                      }
+                    }}
+                    className="flex flex-col items-center gap-1 shrink-0 group focus:outline-none"
+                  >
+                    <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-cyan-400 to-pink-500 group-hover:scale-105 transition-transform">
+                      <UserAvatar
+                        name={friend.name}
+                        avatar={friend.avatar}
+                        size="md"
+                        isOnline={friend.isOnline}
+                        showOnline={true}
+                      />
+                    </div>
+                    <span className="text-[11px] text-slate-300 truncate max-w-[60px]">
+                      {friend.name.split(' ')[0]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="px-4 py-2 text-xs text-slate-400 italic">
+                No friends yet. Add friends to get started.
+              </p>
+            )}
           </div>
 
           {/* Conversation Thread List */}
@@ -663,47 +687,68 @@ export const ChatView: React.FC<ChatViewProps> = ({
               Recent Threads
             </p>
 
-            {filteredThreads.map((thread) => (
-              <div
-                key={thread.id}
-                id={`thread-item-${thread.id}`}
-                onClick={() => onSelectChat(thread.id)}
-                className="flex items-center gap-3.5 p-3 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 hover:bg-purple-900/30 cursor-pointer transition-all"
-              >
-                {/* Avatar with Status */}
-                <div className="shrink-0">
-                  <UserAvatar
-                    name={thread.friend.name}
-                    avatar={thread.friend.avatar}
-                    size="md"
-                    isOnline={thread.friend.isOnline}
-                    showOnline={true}
-                  />
-                </div>
-
-                {/* Preview Text */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-white truncate">
-                      {thread.friend.name}
-                    </h4>
-                    <span className="text-[11px] text-slate-400 font-mono">
-                      {thread.timestamp}
-                    </span>
+            {filteredThreads.length > 0 ? (
+              filteredThreads.map((thread) => (
+                <div
+                  key={thread.id}
+                  id={`thread-item-${thread.id}`}
+                  onClick={() => onSelectChat(thread.id)}
+                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 hover:bg-purple-900/30 cursor-pointer transition-all"
+                >
+                  {/* Avatar with Status */}
+                  <div className="shrink-0">
+                    <UserAvatar
+                      name={thread.friend.name}
+                      avatar={thread.friend.avatar}
+                      size="md"
+                      isOnline={thread.friend.isOnline}
+                      showOnline={true}
+                    />
                   </div>
-                  <p className="text-xs text-slate-300 truncate mt-1">
-                    {thread.lastMessage}
-                  </p>
-                </div>
 
-                {/* Unread Pill */}
-                {thread.unreadCount > 0 && (
-                  <div className="w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(236,72,153,0.8)]">
-                    {thread.unreadCount}
+                  {/* Preview Text */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm text-white truncate">
+                        {thread.friend.name}
+                      </h4>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {thread.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 truncate mt-1">
+                      {thread.lastMessage}
+                    </p>
                   </div>
+
+                  {/* Unread Pill */}
+                  {thread.unreadCount > 0 && (
+                    <div className="w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(236,72,153,0.8)]">
+                      {thread.unreadCount}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-purple-950/20 border border-purple-900/30 text-center space-y-3">
+                <div className="w-10 h-10 mx-auto rounded-full bg-purple-900/40 border border-purple-800/40 flex items-center justify-center text-purple-300">
+                  <Users className="w-5 h-5" />
+                </div>
+                <p className="text-xs text-slate-300 font-medium">
+                  No friends yet. Add friends to get started.
+                </p>
+                {onOpenAddFriend && (
+                  <button
+                    id="chat-empty-threads-add-friend-btn"
+                    onClick={onOpenAddFriend}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold shadow-md hover:scale-105 transition-all inline-flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Add Friend</span>
+                  </button>
                 )}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -714,142 +759,176 @@ export const ChatView: React.FC<ChatViewProps> = ({
       {activeTab === 'friends' && (
         <div className="px-4 space-y-3">
           {/* Status Filter Pills: All / Online / Offline */}
-          <div className="flex items-center gap-2">
-            <button
-              id="filter-friends-all-btn"
-              onClick={() => setFriendsFilter('all')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                friendsFilter === 'all'
-                  ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]'
-                  : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
-              }`}
-            >
-              All Friends ({allFriends.length})
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                id="filter-friends-all-btn"
+                onClick={() => setFriendsFilter('all')}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  friendsFilter === 'all'
+                    ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]'
+                    : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
+                }`}
+              >
+                All ({allFriends.length})
+              </button>
 
-            <button
-              id="filter-friends-online-btn"
-              onClick={() => setFriendsFilter('online')}
-              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
-                friendsFilter === 'online'
-                  ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                  : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Online ({onlineFriends.length})
-            </button>
+              <button
+                id="filter-friends-online-btn"
+                onClick={() => setFriendsFilter('online')}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${
+                  friendsFilter === 'online'
+                    ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                    : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Online ({onlineFriends.length})
+              </button>
 
-            <button
-              id="filter-friends-offline-btn"
-              onClick={() => setFriendsFilter('offline')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                friendsFilter === 'offline'
-                  ? 'bg-slate-700 text-white'
-                  : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
-              }`}
-            >
-              Offline ({allFriends.length - onlineFriends.length})
-            </button>
+              <button
+                id="filter-friends-offline-btn"
+                onClick={() => setFriendsFilter('offline')}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  friendsFilter === 'offline'
+                    ? 'bg-slate-700 text-white'
+                    : 'bg-purple-950/40 text-slate-400 border border-purple-900/30'
+                }`}
+              >
+                Offline ({allFriends.length - onlineFriends.length})
+              </button>
+            </div>
+
+            {onOpenAddFriend && (
+              <button
+                id="chat-filter-add-friend-btn"
+                onClick={onOpenAddFriend}
+                className="px-2.5 py-1 rounded-full bg-pink-500/20 hover:bg-pink-500 text-pink-300 hover:text-white border border-pink-500/30 text-xs font-semibold flex items-center gap-1 transition-all shrink-0"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            )}
           </div>
 
           {/* Friends Cards */}
           <div className="space-y-2.5">
-            {filteredFriends.map((friend) => (
-              <div
-                key={friend.id}
-                id={`friend-card-${friend.id}`}
-                className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 transition-all space-y-2.5"
-              >
-                {/* Friend Identity Row */}
-                <div className="flex items-center justify-between">
-                  <div
-                    onClick={() => setSelectedProfileFriend(friend)}
-                    className="flex items-center gap-3 cursor-pointer group"
-                  >
-                    <UserAvatar
-                      name={friend.name}
-                      avatar={friend.avatar}
-                      size="md"
-                      isOnline={friend.isOnline}
-                      showOnline={true}
-                    />
+            {filteredFriends.length > 0 ? (
+              filteredFriends.map((friend) => (
+                <div
+                  key={friend.id}
+                  id={`friend-card-${friend.id}`}
+                  className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-900/30 hover:border-pink-500/40 transition-all space-y-2.5"
+                >
+                  {/* Friend Identity Row */}
+                  <div className="flex items-center justify-between">
+                    <div
+                      onClick={() => setSelectedProfileFriend(friend)}
+                      className="flex items-center gap-3 cursor-pointer group"
+                    >
+                      <UserAvatar
+                        name={friend.name}
+                        avatar={friend.avatar}
+                        size="md"
+                        isOnline={friend.isOnline}
+                        showOnline={true}
+                      />
 
-                    <div>
-                      <h4 className="font-semibold text-sm text-white group-hover:text-pink-300 transition-colors flex items-center gap-1.5">
-                        {friend.name}
-                      </h4>
-                      <p className="text-[11px] font-mono text-pink-400">{friend.handle}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {friend.isOnline ? (
-                          <span className="text-emerald-400 font-medium">● Online now</span>
-                        ) : (
-                          <span>Last active: {friend.lastSeen || 'Recently'}</span>
-                        )}
-                      </p>
+                      <div>
+                        <h4 className="font-semibold text-sm text-white group-hover:text-pink-300 transition-colors flex items-center gap-1.5">
+                          {friend.name}
+                        </h4>
+                        <p className="text-[11px] font-mono text-pink-400">{friend.handle}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {friend.isOnline ? (
+                            <span className="text-emerald-400 font-medium">● Online now</span>
+                          ) : (
+                            <span>Last active: {friend.lastSeen || 'Recently'}</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Profile info button */}
+                    <button
+                      id={`view-profile-${friend.id}`}
+                      onClick={() => setSelectedProfileFriend(friend)}
+                      className="p-2 rounded-xl bg-purple-950/50 border border-purple-800/40 text-slate-300 hover:text-white transition-colors"
+                      title="View Profile"
+                    >
+                      <User className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  {/* Profile info button */}
-                  <button
-                    id={`view-profile-${friend.id}`}
-                    onClick={() => setSelectedProfileFriend(friend)}
-                    className="p-2 rounded-xl bg-purple-950/50 border border-purple-800/40 text-slate-300 hover:text-white transition-colors"
-                    title="View Profile"
-                  >
-                    <User className="w-4 h-4" />
-                  </button>
-                </div>
+                  {/* Status Quote */}
+                  {friend.statusText && (
+                    <p className="text-xs text-slate-300 bg-purple-950/40 px-3 py-1.5 rounded-xl border border-purple-900/30">
+                      {friend.statusText}
+                    </p>
+                  )}
 
-                {/* Status Quote */}
-                {friend.statusText && (
-                  <p className="text-xs text-slate-300 bg-purple-950/40 px-3 py-1.5 rounded-xl border border-purple-900/30">
-                    {friend.statusText}
-                  </p>
+                  {/* Action Buttons: Chat, Voice Call, Video Call, Play Game */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-purple-900/20">
+                    <button
+                      id={`friend-chat-btn-${friend.id}`}
+                      onClick={() => {
+                        if (onOpenChatWithFriend) onOpenChatWithFriend(friend);
+                      }}
+                      className="flex-1 py-1.5 rounded-xl bg-purple-900/40 hover:bg-pink-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 border border-purple-700/40 hover:border-pink-500 transition-all"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Chat</span>
+                    </button>
+
+                    <button
+                      id={`friend-voice-call-btn-${friend.id}`}
+                      onClick={() => handleStartVoiceCall(friend)}
+                      className="p-2 rounded-xl bg-purple-900/40 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
+                      title="Voice Call"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-cyan-400" />
+                    </button>
+
+                    <button
+                      id={`friend-video-call-btn-${friend.id}`}
+                      onClick={() => handleStartVideoCall(friend)}
+                      className="p-2 rounded-xl bg-purple-900/40 hover:bg-purple-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
+                      title="Video Call"
+                    >
+                      <Video className="w-3.5 h-3.5 text-purple-300" />
+                    </button>
+
+                    <button
+                      id={`friend-play-game-btn-${friend.id}`}
+                      onClick={() => handlePlayGameWithFriend(friend)}
+                      className="p-2 rounded-xl bg-purple-900/40 hover:bg-emerald-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
+                      title="Play Game Duel"
+                    >
+                      <Gamepad2 className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-purple-950/20 border border-purple-900/30 text-center space-y-3">
+                <div className="w-12 h-12 mx-auto rounded-full bg-purple-900/40 border border-purple-800/40 flex items-center justify-center text-purple-300">
+                  <Users className="w-6 h-6" />
+                </div>
+                <p className="text-xs text-slate-300 font-medium">
+                  No friends yet. Add friends to get started.
+                </p>
+                {onOpenAddFriend && (
+                  <button
+                    id="chat-empty-friends-add-btn"
+                    onClick={onOpenAddFriend}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold shadow-md hover:scale-105 transition-all inline-flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Add Friend</span>
+                  </button>
                 )}
-
-                {/* Action Buttons: Chat, Voice Call, Video Call, Play Game */}
-                <div className="flex items-center gap-2 pt-1 border-t border-purple-900/20">
-                  <button
-                    id={`friend-chat-btn-${friend.id}`}
-                    onClick={() => {
-                      if (onOpenChatWithFriend) onOpenChatWithFriend(friend);
-                    }}
-                    className="flex-1 py-1.5 rounded-xl bg-purple-900/40 hover:bg-pink-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 border border-purple-700/40 hover:border-pink-500 transition-all"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-pink-400" />
-                    <span>Chat</span>
-                  </button>
-
-                  <button
-                    id={`friend-voice-call-btn-${friend.id}`}
-                    onClick={() => handleStartVoiceCall(friend)}
-                    className="p-2 rounded-xl bg-purple-900/40 hover:bg-cyan-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
-                    title="Voice Call"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-cyan-400" />
-                  </button>
-
-                  <button
-                    id={`friend-video-call-btn-${friend.id}`}
-                    onClick={() => handleStartVideoCall(friend)}
-                    className="p-2 rounded-xl bg-purple-900/40 hover:bg-purple-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
-                    title="Video Call"
-                  >
-                    <Video className="w-3.5 h-3.5 text-purple-300" />
-                  </button>
-
-                  <button
-                    id={`friend-play-game-btn-${friend.id}`}
-                    onClick={() => handlePlayGameWithFriend(friend)}
-                    className="p-2 rounded-xl bg-purple-900/40 hover:bg-emerald-600 text-slate-300 hover:text-white transition-colors border border-purple-700/40"
-                    title="Play Game Duel"
-                  >
-                    <Gamepad2 className="w-3.5 h-3.5 text-emerald-400" />
-                  </button>
-                </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

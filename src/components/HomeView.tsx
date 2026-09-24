@@ -18,6 +18,7 @@ import {
   Users,
   Play,
   Trophy,
+  UserPlus,
 } from 'lucide-react';
 import { Friend, ChatThread, Reel, MusicTrack, TabType, UserProfile } from '../types';
 import { MusicCard } from './MusicCard';
@@ -38,6 +39,7 @@ interface HomeViewProps {
   unreadNotificationsCount: number;
   currentUser: UserProfile;
   onOpenEditProfile?: () => void;
+  onOpenAddFriend?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -54,6 +56,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   unreadNotificationsCount,
   currentUser,
   onOpenEditProfile,
+  onOpenAddFriend,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'social' | 'entertainment'>('all');
@@ -285,7 +288,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </span>
                 </p>
                 <p className="text-[11px] text-pink-200/80">
-                  Tom Anderson & Sarah Jenkins sent you updates
+                  Check your latest alerts and challenge updates
                 </p>
               </div>
             </div>
@@ -306,35 +309,66 @@ export const HomeView: React.FC<HomeViewProps> = ({
               ({filteredFriends.length})
             </span>
           </div>
-          <span className="text-[11px] text-slate-400">Tap to view status</span>
+          {onOpenAddFriend ? (
+            <button
+              onClick={onOpenAddFriend}
+              className="text-[11px] font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
+            >
+              <UserPlus className="w-3 h-3" />
+              <span>Add Friend</span>
+            </button>
+          ) : (
+            <span className="text-[11px] text-slate-400">Tap to view status</span>
+          )}
         </div>
 
-        <div className="flex gap-3.5 overflow-x-auto px-4 py-2 no-scrollbar">
-          {filteredFriends.map((friend) => (
-            <button
-              key={friend.id}
-              id={`friend-story-${friend.id}`}
-              onClick={() => onOpenStory(friend)}
-              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
-            >
-              <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-all">
-                <div className="p-0.5 rounded-full bg-[#090714]">
-                  <UserAvatar
-                    name={friend.name}
-                    avatar={friend.avatar}
-                    size="lg"
-                  />
+        {filteredFriends.length > 0 ? (
+          <div className="flex gap-3.5 overflow-x-auto px-4 py-2 no-scrollbar">
+            {filteredFriends.map((friend) => (
+              <button
+                key={friend.id}
+                id={`friend-story-${friend.id}`}
+                onClick={() => onOpenStory(friend)}
+                className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
+              >
+                <div className="relative p-0.5 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-all">
+                  <div className="p-0.5 rounded-full bg-[#090714]">
+                    <UserAvatar
+                      name={friend.name}
+                      avatar={friend.avatar}
+                      size="lg"
+                    />
+                  </div>
+                  {friend.isOnline && (
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]" />
+                  )}
                 </div>
-                {friend.isOnline && (
-                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#090714] shadow-[0_0_8px_#34d399]" />
-                )}
-              </div>
-              <span className="text-xs font-medium text-slate-300 group-hover:text-pink-300 transition-colors w-16 truncate text-center">
-                {friend.name.split(' ')[0]}
-              </span>
-            </button>
-          ))}
-        </div>
+                <span className="text-xs font-medium text-slate-300 group-hover:text-pink-300 transition-colors w-16 truncate text-center">
+                  {friend.name.split(' ')[0]}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="mx-4 p-5 rounded-2xl bg-purple-950/20 border border-purple-900/30 text-center space-y-2.5">
+            <div className="w-10 h-10 mx-auto rounded-full bg-purple-900/40 border border-purple-700/40 flex items-center justify-center text-purple-300">
+              <Users className="w-5 h-5" />
+            </div>
+            <p className="text-xs text-slate-300 font-medium">
+              No friends yet. Add friends to get started.
+            </p>
+            {onOpenAddFriend && (
+              <button
+                id="home-empty-add-friend-btn"
+                onClick={onOpenAddFriend}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold shadow-md hover:scale-105 transition-all inline-flex items-center gap-1.5"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add Friend</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 4. ENTERTAINMENT & SOCIAL SHORTCUTS */}
@@ -473,26 +507,43 @@ export const HomeView: React.FC<HomeViewProps> = ({
               key={reel.id}
               id={`reel-preview-${reel.id}`}
               onClick={() => onSelectTab('reels')}
-              className="relative w-32 h-48 rounded-2xl overflow-hidden shrink-0 border border-purple-800/40 cursor-pointer group shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all"
+              className="relative w-32 h-48 rounded-2xl overflow-hidden shrink-0 border border-purple-800/40 cursor-pointer group shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.4)] transition-all bg-[#0d091d]"
             >
-              <img
-                src={reel.videoThumbnail}
-                alt={reel.caption}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              {reel.platform === 'youtube' ? (
+                <img
+                  src={`https://img.youtube.com/vi/${reel.id}/hqdefault.jpg`}
+                  alt={reel.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <div className={`w-full h-full flex flex-col items-center justify-center p-3 text-center ${
+                  reel.platform === 'facebook'
+                    ? 'bg-gradient-to-b from-blue-950 via-[#0a1026] to-black'
+                    : 'bg-gradient-to-b from-purple-950 via-[#180d28] to-black'
+                }`}>
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white mb-2 shadow-lg ${
+                    reel.platform === 'facebook' ? 'bg-blue-600' : 'bg-gradient-to-tr from-amber-500 to-pink-500'
+                  }`}>
+                    <Radio className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] text-white font-semibold line-clamp-2 px-1">
+                    {reel.title}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
               
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-pink-500/80 text-[9px] font-bold text-white flex items-center gap-0.5">
+              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-pink-500/80 text-[9px] font-bold text-white flex items-center gap-0.5 pointer-events-none">
                 <Radio className="w-2.5 h-2.5" /> REEL
               </div>
 
-              <div className="absolute bottom-2 left-2 right-2">
+              <div className="absolute bottom-2 left-2 right-2 pointer-events-none">
                 <p className="text-[10px] font-semibold text-white truncate">
-                  {reel.creator.name}
+                  {reel.username}
                 </p>
                 <p className="text-[9px] text-pink-300 truncate">
-                  ❤️ {reel.likes}
+                  {reel.title}
                 </p>
               </div>
             </div>

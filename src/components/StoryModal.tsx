@@ -28,14 +28,24 @@ export const StoryModal: React.FC<StoryModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-0 sm:p-4">
       <div className="relative w-full h-full max-w-md bg-[#090714] overflow-hidden flex flex-col sm:rounded-3xl border border-pink-500/30 shadow-[0_0_50px_rgba(236,72,153,0.3)]">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <img
-            src={friend.storyImage || friend.avatar}
-            alt={friend.name}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
-          />
+        {/* Background Image / Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1b0d3a] via-[#100726] to-black">
+          {(friend.storyImage || friend.avatar) ? (
+            <img
+              src={friend.storyImage || friend.avatar}
+              alt={friend.name}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-purple-950 via-[#180d38] to-pink-950">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-pink-500/20 to-purple-600/30 flex items-center justify-center border border-pink-500/30 shadow-[0_0_40px_rgba(236,72,153,0.3)]">
+                <span className="font-display font-extrabold text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-300">
+                  {friend.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'FR'}
+                </span>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/70 pointer-events-none" />
         </div>
 

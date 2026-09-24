@@ -15,6 +15,7 @@ import {
   Wifi,
 } from 'lucide-react';
 import { Friend, CallType, CallState } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface CallModalProps {
   callFriend: Friend;
@@ -110,11 +111,10 @@ export const CallModal: React.FC<CallModalProps> = ({
             <div className="absolute inset-0 -m-3 rounded-full border-2 border-purple-500/50 animate-pulse" />
             
             <div className="relative p-1 rounded-full bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 shadow-[0_0_35px_rgba(236,72,153,0.6)]">
-              <img
-                src={callFriend.avatar}
-                alt={callFriend.name}
-                referrerPolicy="no-referrer"
-                className="w-28 h-28 rounded-full object-cover border-4 border-[#090714]"
+              <UserAvatar
+                name={callFriend.name}
+                avatar={callFriend.avatar}
+                size="xl"
               />
             </div>
           </div>
@@ -184,13 +184,23 @@ export const CallModal: React.FC<CallModalProps> = ({
     return (
       <div className="fixed inset-0 z-[80] bg-[#090714] flex flex-col justify-between max-w-md mx-auto animate-in fade-in duration-300 overflow-hidden">
         {/* Main Friend Video Stream Simulation */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={callFriend.coverImage || callFriend.storyImage || callFriend.avatar}
-            alt="Video Feed"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter brightness-[0.75] contrast-[1.1]"
-          />
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#1b0d3a] via-[#100726] to-[#090714]">
+          {(callFriend.coverImage || callFriend.storyImage || callFriend.avatar) ? (
+            <img
+              src={callFriend.coverImage || callFriend.storyImage || callFriend.avatar}
+              alt="Video Feed"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover filter brightness-[0.75] contrast-[1.1]"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <UserAvatar
+                name={callFriend.name}
+                avatar={callFriend.avatar}
+                size="xl"
+              />
+            </div>
+          )}
           {/* Neon scanlines & cyberpunk overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-[#090714] pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_50%,_rgba(9,7,20,0.85)_100%)] pointer-events-none" />
@@ -330,11 +340,10 @@ export const CallModal: React.FC<CallModalProps> = ({
           {/* Animated sound aura */}
           <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 animate-pulse blur-xl" />
           <div className="relative p-1 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 shadow-[0_0_35px_rgba(168,85,247,0.5)]">
-            <img
-              src={callFriend.avatar}
-              alt={callFriend.name}
-              referrerPolicy="no-referrer"
-              className="w-32 h-32 rounded-full object-cover border-4 border-[#090714]"
+            <UserAvatar
+              name={callFriend.name}
+              avatar={callFriend.avatar}
+              size="xl"
             />
           </div>
         </div>

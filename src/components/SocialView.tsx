@@ -7,6 +7,8 @@ import {
   Sparkles,
   Instagram,
   Facebook,
+  Youtube,
+  ExternalLink,
   Image as ImageIcon,
   CheckCircle2,
   Tag,
@@ -249,13 +251,23 @@ export const SocialView: React.FC<SocialViewProps> = ({
               {post.videoUrl ? (
                 <div className="relative aspect-video w-full overflow-hidden bg-black">
                   {playingVideoId === post.id ? (
-                    <iframe
-                      src={`${post.videoUrl}?autoplay=1`}
-                      title="Post video"
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                    post.videoUrl.includes('youtube') || post.videoUrl.includes('embed') ? (
+                      <iframe
+                        src={post.videoUrl.includes('?') ? `${post.videoUrl}&autoplay=1` : `${post.videoUrl}?autoplay=1`}
+                        title="Post video"
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={post.videoUrl}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   ) : (
                     <div
                       onClick={() => setPlayingVideoId(post.id)}
@@ -271,9 +283,21 @@ export const SocialView: React.FC<SocialViewProps> = ({
                           <span className="text-xl ml-1">▶</span>
                         </div>
                       </div>
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-mono text-cyan-300">
-                        EMBEDDED VIDEO
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-mono text-cyan-300 flex items-center gap-1">
+                        <span>▶ PLAY VIDEO</span>
                       </div>
+                      {post.originalUrl && (
+                        <a
+                          href={post.originalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md text-[10px] font-mono text-pink-400 hover:text-pink-300 flex items-center gap-1 border border-pink-500/30"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Original</span>
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
@@ -331,6 +355,20 @@ export const SocialView: React.FC<SocialViewProps> = ({
                     <span>{post.sharesCount}</span>
                   </button>
                 </div>
+
+                {/* Fallback open button */}
+                {post.originalUrl && (
+                  <a
+                    href={post.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded-md bg-purple-950/60 border border-purple-800/40 text-[10px] font-semibold text-slate-300 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                    title="Open on original platform"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Open {post.source}</span>
+                  </a>
+                )}
               </div>
 
               {/* Collapsible Comments Section */}

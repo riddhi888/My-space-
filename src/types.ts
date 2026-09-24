@@ -94,6 +94,7 @@ export interface SocialPost {
   content: string;
   image?: string;
   videoUrl?: string;
+  originalUrl?: string;
   timestamp: string;
   likes: number;
   isLiked?: boolean;
@@ -109,27 +110,12 @@ export interface SocialPost {
   }[];
 }
 
-export interface Reel {
+export type Reel = {
   id: string;
-  creator: {
-    name: string;
-    handle: string;
-    avatar: string;
-  };
-  videoThumbnail: string;
-  videoUrl?: string;
-  youtubeShortsId?: string;
-  instagramReelId?: string;
-  facebookReelId?: string;
-  embedUrl?: string;
-  platform?: 'youtube' | 'instagram' | 'facebook' | 'myspace';
-  caption: string;
-  audioTrack: string;
-  likes: string;
-  comments: string;
-  tags: string[];
-  isFollowing?: boolean;
-}
+  platform: 'youtube' | 'instagram' | 'facebook';
+  title: string;
+  username: string;
+};
 
 export interface HubItem {
   id: string;
@@ -157,8 +143,12 @@ export interface MusicTrack {
   id: string;
   title: string;
   artist: string;
-  cover: string;
+  cover?: string;
+  coverArt?: string;
   duration: string;
+  album?: string;
+  genre?: string;
+  plays?: string;
   audioUrl?: string;
   isPlaying?: boolean;
 }
@@ -171,5 +161,5 @@ export interface GameItem {
   rating: number;
   playersOnline: number;
   isMiniGamePlayable?: boolean;
-  gameType?: 'reflex' | 'matrix' | 'runner';
+  gameType?: 'reflex' | 'matrix' | 'runner' | 'memory';
 }

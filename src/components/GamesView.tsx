@@ -12,15 +12,26 @@ import {
   Brain,
   Info,
   CheckCircle2,
+  UserPlus,
 } from 'lucide-react';
-import { GameItem } from '../types';
+import { GameItem, UserProfile, Friend } from '../types';
+import { UserAvatar } from './UserAvatar';
 
 interface GamesViewProps {
   games: GameItem[];
+  currentUser?: UserProfile;
+  friends?: Friend[];
+  onOpenAddFriend?: () => void;
   onShowToast?: (msg: string) => void;
 }
 
-export const GamesView: React.FC<GamesViewProps> = ({ games, onShowToast }) => {
+export const GamesView: React.FC<GamesViewProps> = ({
+  games,
+  currentUser,
+  friends = [],
+  onOpenAddFriend,
+  onShowToast,
+}) => {
   const [selectedGameId, setSelectedGameId] = useState<'reflex' | 'matrix'>('reflex');
 
   // GAME 1: Cyber Reflex Tap State
@@ -172,12 +183,24 @@ export const GamesView: React.FC<GamesViewProps> = ({ games, onShowToast }) => {
     }
   };
 
-  const leaderboard = [
-    { rank: 1, name: 'Marcus Vance', score: 2840, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', badge: '🥇 Cyber King' },
-    { rank: 2, name: 'Elena Rostova', score: 2610, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', badge: '🥈 Glitch Queen' },
-    { rank: 3, name: 'Alex Rivera (You)', score: Math.max(reflexHighScore, memoryHighScore), avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', badge: '🥉 Neon Master' },
-    { rank: 4, name: 'Kai Takahashi', score: 2120, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', badge: '🎮 Arcade Hacker' },
-  ];
+  const userBestScore = Math.max(reflexHighScore, memoryHighScore);
+  const userEntry = {
+    rank: 1,
+    name: currentUser?.name ? `${currentUser.name} (You)` : 'You',
+    score: userBestScore,
+    avatar: currentUser?.avatar || '',
+    badge: '🥇 Arcade Pioneer',
+  };
+
+  const friendLeaderboard = friends.map((f, idx) => ({
+    rank: idx + 2,
+    name: f.name,
+    score: 0,
+    avatar: f.avatar,
+    badge: '🎮 Cyber Challenger',
+  }));
+
+  const leaderboard = [userEntry, ...friendLeaderboard];
 
   return (
     <div className="space-y-6 pb-28">
@@ -483,46 +506,96 @@ export const GamesView: React.FC<GamesViewProps> = ({ games, onShowToast }) => {
 
       {/* Arcade Leaderboard */}
       <div className="px-4 space-y-2.5">
-        <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-yellow-400" />
-          <span>Friends Leaderboard</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-bold text-sm tracking-wide text-white flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            <span>Friends Leaderboard</span>
+          </h3>
+          {onOpenAddFriend && (
+            <button
+              onClick={onOpenAddFriend}
+              className="text-[11px] font-semibold text-pink-400 hover:text-pink-300 flex items-center gap-1"
+            >
+              <UserPlus className="w-3 h-3" />
+              <span>Add Friend</span>
+            </button>
+          )}
+        </div>
 
         <div className="rounded-2xl bg-[#110c26] border border-purple-800/40 p-2 space-y-1.5">
-          {leaderboard.map((item) => (
-            <div
-              key={item.rank}
-              className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
-                item.rank === 3
-                  ? 'bg-purple-900/40 border border-pink-500/40'
-                  : 'hover:bg-purple-950/40'
-              }`}
-            >
-              <span className={`w-5 font-mono text-xs font-bold text-center ${
-                item.rank === 1 ? 'text-yellow-400' : item.rank === 2 ? 'text-slate-300' : 'text-pink-400'
-              }`}>
-                #{item.rank}
+          {userBestScore > 0 && (
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-900/40 border border-pink-500/40">
+              <span className="w-5 font-mono text-xs font-bold text-center text-yellow-400">
+                #1
               </span>
 
-              <img
-                src={item.avatar}
-                alt={item.name}
-                referrerPolicy="no-referrer"
-                className="w-8 h-8 rounded-full object-cover border border-purple-500/40"
+              <UserAvatar
+                name={currentUser?.name || 'You'}
+                avatar={currentUser?.avatar}
+                size="sm"
+                isOnline={true}
               />
 
               <div className="flex-1 min-w-0">
                 <h4 className="text-xs font-semibold text-white truncate">
-                  {item.name}
+                  {currentUser?.name ? `${currentUser.name} (You)` : 'You'}
                 </h4>
-                <p className="text-[10px] text-slate-400">{item.badge}</p>
+                <p className="text-[10px] text-slate-400">🥇 Arcade Pioneer</p>
               </div>
 
               <span className="font-mono text-xs font-bold text-cyan-300">
-                {item.score.toLocaleString()} pts
+                {userBestScore.toLocaleString()} pts
               </span>
             </div>
-          ))}
+          )}
+
+          {friends.length > 0 ? (
+            friends.map((friend, idx) => (
+              <div
+                key={friend.id}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-purple-950/40 transition-colors"
+              >
+                <span className="w-5 font-mono text-xs font-bold text-center text-slate-300">
+                  #{userBestScore > 0 ? idx + 2 : idx + 1}
+                </span>
+
+                <UserAvatar
+                  name={friend.name}
+                  avatar={friend.avatar}
+                  size="sm"
+                  isOnline={friend.isOnline}
+                  showOnline={true}
+                />
+
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-semibold text-white truncate">
+                    {friend.name}
+                  </h4>
+                  <p className="text-[10px] text-slate-400">🎮 Cyber Challenger</p>
+                </div>
+
+                <span className="font-mono text-xs font-bold text-cyan-300">
+                  0 pts
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="py-4 px-3 text-center space-y-2">
+              <p className="text-xs text-slate-400">
+                No friends yet. Add friends to get started.
+              </p>
+              {onOpenAddFriend && (
+                <button
+                  id="games-empty-add-friend-btn"
+                  onClick={onOpenAddFriend}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold shadow-md hover:scale-105 transition-all inline-flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Add Friend</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
